@@ -1,9 +1,11 @@
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "ASTNode.hpp"
 
+std::unordered_map<std::string, int> variables;
 int evaluate(const ASTNode* node) {
     switch(node->type) {
         case NodeType::INT: return node->value;
@@ -28,6 +30,17 @@ int evaluate(const ASTNode* node) {
                 result *= i;
             }
             return result;
+        }
+        case NodeType::IDENT: {
+            auto it = variables.find(node->name);
+            if(it == variables.end()) throw std::runtime_error("Undefined variable: " + node->name);
+            return it->second;
+        }
+        case NodeType::ASSIGN: {
+            std::string varName = node->left->name;
+            int value = evaluate(node->right);
+            variables[varName] = value;
+            return value;
         }
     }
     return 0; 

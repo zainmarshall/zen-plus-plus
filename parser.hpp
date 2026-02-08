@@ -12,8 +12,10 @@ private:
     size_t pos = 0;
 
     Token currentToken();
+    Token peekToken(size_t offset = 1);
     void advance();
 
+    ASTNode* parseStatment();
     ASTNode* parseExpr();
     ASTNode* parseTerm();
     ASTNode* parseFactor();

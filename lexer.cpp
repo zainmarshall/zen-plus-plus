@@ -20,6 +20,15 @@ std::vector<Token> Lexer::tokenize() {
             tokens.push_back({TokenType::INT, num});
             continue;
         }
+        if(isalpha(currentChar()) || currentChar() == '_') {
+            std::string ident;
+            while (isalnum(currentChar()) || currentChar() == '_') {
+                ident += currentChar();
+                advance();
+            }
+            tokens.push_back({TokenType::IDENTIFIER, 0, ident});
+            continue;
+        }
         switch (currentChar()) {
             case '+': tokens.push_back({TokenType::PLUS, 0}); break;
             case '-': tokens.push_back({TokenType::MINUS, 0}); break;
@@ -30,6 +39,8 @@ std::vector<Token> Lexer::tokenize() {
             case ')': tokens.push_back({TokenType::RPAREN, 0}); break;
             case '^': tokens.push_back({TokenType::EXP, 0}); break;
             case '!': tokens.push_back({TokenType::FACTORIAL, 0}); break;
+            case '=': tokens.push_back({TokenType::ASSIGN, 0}); break;
+            
         }
         advance();
     }

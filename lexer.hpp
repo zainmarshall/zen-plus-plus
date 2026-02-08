@@ -2,11 +2,12 @@
 #include <vector>
 #include <string>
 
-enum class TokenType { INT, PLUS, MINUS, STAR, SLASH, MOD, LPAREN, RPAREN, END, EXP, FACTORIAL, IDENTIFIER };
+enum class TokenType { INT, PLUS, MINUS, STAR, SLASH, MOD, LPAREN, RPAREN, END, EXP, FACTORIAL, IDENTIFIER, ASSIGN };
 
 struct Token {
     TokenType type;
     int value; 
+    std::string name;
 };
 
 class Lexer {
