@@ -2,7 +2,10 @@
 #include <vector>
 #include <string>
 
-enum class TokenType { INT, PLUS, MINUS, STAR, SLASH, MOD, LPAREN, RPAREN, END, EXP, FACTORIAL, IDENTIFIER, ASSIGN };
+enum class TokenType { INT, PLUS, MINUS, STAR, SLASH, MOD, LPAREN, RPAREN, END, EXP, FACTORIAL, IDENTIFIER, ASSIGN, 
+    TRUE, FALSE, EQUAL, NOT_EQUAL, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL, AND, OR, NOT,
+    IF, ELSE,
+    LBRACE, RBRACE};
 
 struct Token {
     TokenType type;
@@ -18,5 +21,6 @@ private:
     std::string source;
     size_t pos = 0;
     char currentChar();
+    char peekChar();
     void advance();
 };

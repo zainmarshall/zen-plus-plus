@@ -7,6 +7,11 @@ char Lexer::currentChar() {
     return pos < source.size() ? source[pos] : '\0';
 }
 
+char Lexer::peekChar() {
+    size_t next = pos + 1;
+    return next < source.size() ? source[next] : '\0';
+}
+
 void Lexer::advance() { pos++; }
 
 
@@ -26,9 +31,23 @@ std::vector<Token> Lexer::tokenize() {
                 ident += currentChar();
                 advance();
             }
-            tokens.push_back({TokenType::IDENTIFIER, 0, ident});
+            if(ident == "true") {
+                tokens.push_back({TokenType::TRUE, 0});
+            } else if (ident == "false") {
+                tokens.push_back({TokenType::FALSE, 0});
+            } else {
+                tokens.push_back({TokenType::IDENTIFIER, 0, ident});
+            }
             continue;
         }
+        char c = currentChar();
+        char n = peekChar();
+        if (c == '=' && n == '=') { tokens.push_back({TokenType::EQUAL, 0}); advance(); advance(); continue; }
+        if (c == '!' && n == '=') { tokens.push_back({TokenType::NOT_EQUAL, 0}); advance(); advance(); continue; }
+        if (c == '<' && n == '=') { tokens.push_back({TokenType::LESS_EQUAL, 0}); advance(); advance(); continue; }
+        if (c == '>' && n == '=') { tokens.push_back({TokenType::GREATER_EQUAL, 0}); advance(); advance(); continue; }
+        if (c == '&' && n == '&') { tokens.push_back({TokenType::AND, 0}); advance(); advance(); continue; }
+        if (c == '|' && n == '|') { tokens.push_back({TokenType::OR, 0}); advance(); advance(); continue; }
         switch (currentChar()) {
             case '+': tokens.push_back({TokenType::PLUS, 0}); break;
             case '-': tokens.push_back({TokenType::MINUS, 0}); break;
@@ -38,9 +57,10 @@ std::vector<Token> Lexer::tokenize() {
             case '(': tokens.push_back({TokenType::LPAREN, 0}); break;
             case ')': tokens.push_back({TokenType::RPAREN, 0}); break;
             case '^': tokens.push_back({TokenType::EXP, 0}); break;
-            case '!': tokens.push_back({TokenType::FACTORIAL, 0}); break;
+            case '!': tokens.push_back({TokenType::NOT, 0}); break;
             case '=': tokens.push_back({TokenType::ASSIGN, 0}); break;
-            
+            case '<': tokens.push_back({TokenType::LESS, 0}); break;
+            case '>': tokens.push_back({TokenType::GREATER, 0}); break;
         }
         advance();
     }

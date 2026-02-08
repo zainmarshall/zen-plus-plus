@@ -18,3 +18,18 @@ What changed:
 3. The parser now uses a lookahead to treat identifier = expr as an assignment, and it also lets identifiers show up inside normal expressions.
 4. The evaluator keeps a small variable map so assignments store values and identifiers read them back.
 
+### Changelog
+- [Variables and Assignment](https://github.com/zainmarshall/zen-plus-plus/commit/17212a585f6c47f7d316112cb932087e08c600d3)
+- [devlogs](https://github.com/zainmarshall/zen-plus-plus/commit/44d1ca303ce65997e834ffe0bc69ff032e80ec9a)
+
+## Zen++ Devlog III
+This step adds booleans and comparisons so I can start building real conditionals later.
+
+What changed:
+1. The lexer now recognizes `true/false` and multi-character operators like `==`, `!=`, `<=`, `>=`, `&&`, `||`.
+2. The AST got boolean literals, comparison operators, and logical NOT.
+3. The parser now handles comparison expressions and prefix `!`, while keeping postfix `!` for factorial.
+4. The evaluator now returns 0/1 for comparisons and supports logical NOT.
+
+### Changelog
+

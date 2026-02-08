@@ -19,6 +19,9 @@ ASTNode* Parser::parseExpression() { return parseStatment(); }
 //The order is: parseStatment -> parseExpr -> parseTerm -> parseFactor
 ASTNode* Parser::parseStatment() {
     Token tok = currentToken();
+    if(tok.type == TokenType::IF) {
+       // return parseIfStatement();
+    }
     if(tok.type == TokenType::IDENTIFIER && peekToken().type == TokenType::ASSIGN){
         std::string varName = tok.name;
         advance();
@@ -26,7 +29,47 @@ ASTNode* Parser::parseStatment() {
         ASTNode* exprNode = parseExpr();
         return new ASTNode(NodeType::ASSIGN, new ASTNode(varName), exprNode);
     }
-    return parseExpr();
+    return parseComparison();
+}
+
+ASTNode* Parser::parseIfStatement() {
+    advance(); // consume if
+    ASTNode* condition = parseComparison();
+    
+}
+
+// ASTNode* Parser::parseBlock() {
+//     advance(); // consume {
+//     std::vector<ASTNode*> statements;
+//     while (currentToken().type != TokenType::RBRACE) {
+//         statements.push_back(parseStatment());
+//     }
+//     advance(); // consume }
+//     // For simplicity, we return the first statement in the block
+// }
+
+ASTNode* Parser::parseComparison() {
+    ASTNode* left = parseExpr();
+    Token next = currentToken();
+    if(next.type == TokenType::EQUAL || next.type == TokenType::NOT_EQUAL ||
+       next.type == TokenType::LESS || next.type == TokenType::GREATER ||
+       next.type == TokenType::LESS_EQUAL || next.type == TokenType::GREATER_EQUAL) {
+        Token tok = currentToken();
+        advance();
+        ASTNode* right = parseExpr();
+        NodeType nodeType;
+        switch(tok.type) {
+            case TokenType::EQUAL: nodeType = NodeType::EQUALS; break;
+            case TokenType::NOT_EQUAL: nodeType = NodeType::NOT_EQUAL; break;
+            case TokenType::LESS: nodeType = NodeType::LESS; break;
+            case TokenType::GREATER: nodeType = NodeType::GREATER; break;
+            case TokenType::LESS_EQUAL: nodeType = NodeType::LESS_EQUAL; break;
+            case TokenType::GREATER_EQUAL: nodeType = NodeType::GREATER_EQUAL; break;
+            default: throw std::runtime_error("Invalid comparison operator");
+        }
+        return new ASTNode(nodeType, left, right);
+    }
+    return left;
 }
 
 ASTNode* Parser::parseExpr() {
@@ -65,7 +108,14 @@ ASTNode* Parser::parseTerm() {
 ASTNode* Parser::parseFactor() {
     Token tok = currentToken();
     ASTNode* node = nullptr;
+    if (tok.type == TokenType::NOT) {
+        advance();
+        ASTNode* rhs = parseFactor();
+        return new ASTNode(NodeType::NOT, rhs, nullptr);
+    }
     if (tok.type == TokenType::INT) { advance(); node = new ASTNode(tok.value); }
+    else if (tok.type == TokenType::TRUE) { advance(); node = new ASTNode(NodeType::BOOL, 1); }
+    else if (tok.type == TokenType::FALSE) { advance(); node = new ASTNode(NodeType::BOOL, 0); }
     else if (tok.type == TokenType::IDENTIFIER) { advance(); node = new ASTNode(tok.name); }
     else if (tok.type == TokenType::LPAREN) {
         advance();
@@ -77,8 +127,7 @@ ASTNode* Parser::parseFactor() {
     }
 
     // Unary Operators
-    tok= currentToken();
-    if(tok.type == TokenType::FACTORIAL){
+    while (currentToken().type == TokenType::NOT || currentToken().type == TokenType::FACTORIAL) {
         advance();
         node = new ASTNode(NodeType::FACTORIAL, node, nullptr);
     }

@@ -16,6 +16,9 @@ private:
     void advance();
 
     ASTNode* parseStatment();
+    ASTNode* parseIfStatement();
+    ASTNode* parseBlock();
+    ASTNode* parseComparison();
     ASTNode* parseExpr();
     ASTNode* parseTerm();
     ASTNode* parseFactor();

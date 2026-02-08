@@ -42,6 +42,15 @@ int evaluate(const ASTNode* node) {
             variables[varName] = value;
             return value;
         }
+        case NodeType::BOOL: return node->value;
+        case NodeType::EQUALS: return evaluate(node->left) == evaluate(node->right);
+        case NodeType::NOT_EQUAL: return evaluate(node->left) != evaluate(node->right);
+        case NodeType::LESS: return evaluate(node->left) < evaluate(node->right);
+        case NodeType::GREATER: return evaluate(node->left) > evaluate(node->right);
+        case NodeType::LESS_EQUAL: return evaluate(node->left) <= evaluate(node->right);
+        case NodeType::GREATER_EQUAL: return evaluate(node->left) >= evaluate(node->right);
+        case NodeType::NOT: return !evaluate(node->left);
+      
     }
     return 0; 
 }
