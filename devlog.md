@@ -23,13 +23,33 @@ What changed:
 - [devlogs](https://github.com/zainmarshall/zen-plus-plus/commit/44d1ca303ce65997e834ffe0bc69ff032e80ec9a)
 
 ## Zen++ Devlog III
-This step adds booleans and comparisons so I can start building real conditionals later.
+This step adds booleans and comparisons so I can start building if/else statements later. Booleans are just like they are in C++, a true boolean is a 1 and a false boolean is a 0. 
 
 What changed:
-1. The lexer now recognizes `true/false` and multi-character operators like `==`, `!=`, `<=`, `>=`, `&&`, `||`.
+1. The lexer now recognizes `true/false` and multi-character operators like `==`, `!=`, `<=`, `>=`.
 2. The AST got boolean literals, comparison operators, and logical NOT.
 3. The parser now handles comparison expressions and prefix `!`, while keeping postfix `!` for factorial.
 4. The evaluator now returns 0/1 for comparisons and supports logical NOT.
 
 ### Changelog
+- [Booleans and comparisions](https://github.com/zainmarshall/zen-plus-plus/commit/5d06bdf80711aed21ce1fb90b0060879086123ba)
+
+## Zen++ Devlog IV
+I added if else statments to the code! The way an if else-if else statment will be written is like tihs:
+```zen
+if bool1{
+    x=1
+}else if bool2{
+    x=2
+}else{
+    x=3
+}
+```
+Note the lack of parantehsis, you don't rly need them beacuse you know your condition is just gonna be sandwiched between the if and the next curly brace. Also now that I added braces I made the parser handle the braces and the AST handle blocks of code.
+
+What changed:
+1. The lexer recognizes `if`, `else`, `{` and `}`.
+2. The parser builds block nodes and full if/else chains, and parses the full program instead of a single statement.
+3. The evaluator now runs blocks and if/else nodes.
+4. The REPL buffers lines and runs the program when you submit a blank line.
 

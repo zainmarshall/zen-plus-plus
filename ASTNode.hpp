@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <vector>
 
 enum class NodeType{
     // Data types
@@ -13,7 +14,8 @@ enum class NodeType{
     BOOL,
     EQUALS, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL, NOT_EQUAL,
     NOT,
-    IF, ELSE, ELSE_IF
+    IF, ELSE, ELSE_IF,
+    BLOCK
 };
 
 struct ASTNode {
@@ -22,6 +24,7 @@ struct ASTNode {
     std::string name; // only for IDENT
     ASTNode* left; 
     ASTNode* right;
+    std::vector<ASTNode*> children;
 
     // Constructors
 
@@ -33,4 +36,6 @@ struct ASTNode {
     ASTNode(NodeType t, ASTNode* l, ASTNode* r) : type(t), left(l), right(r) {}
     // IDENT
     ASTNode(const std::string& n) : type(NodeType::IDENT), name(n) {}
+    // NODE WITH CHILDREN
+    ASTNode(NodeType t, const std::vector<ASTNode*>& nodes) : type(t), children(nodes) {}
 };

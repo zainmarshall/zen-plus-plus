@@ -15,6 +15,7 @@ private:
     Token peekToken(size_t offset = 1);
     void advance();
 
+    ASTNode* parseProgram();
     ASTNode* parseStatment();
     ASTNode* parseIfStatement();
     ASTNode* parseBlock();

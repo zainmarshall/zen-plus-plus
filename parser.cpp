@@ -14,13 +14,21 @@ Token Parser::peekToken(size_t offset) {
 }
 void Parser::advance() { if (pos < tokens.size()) pos++; }
 
-ASTNode* Parser::parseExpression() { return parseStatment(); }
+ASTNode* Parser::parseExpression() { return parseProgram(); }
+
+ASTNode* Parser::parseProgram() {
+    std::vector<ASTNode*> statements;
+    while (currentToken().type != TokenType::END) {
+        statements.push_back(parseStatment());
+    }
+    return new ASTNode(NodeType::BLOCK, statements);
+}
 
 //The order is: parseStatment -> parseExpr -> parseTerm -> parseFactor
 ASTNode* Parser::parseStatment() {
     Token tok = currentToken();
     if(tok.type == TokenType::IF) {
-       // return parseIfStatement();
+       return parseIfStatement();
     }
     if(tok.type == TokenType::IDENTIFIER && peekToken().type == TokenType::ASSIGN){
         std::string varName = tok.name;
@@ -35,18 +43,45 @@ ASTNode* Parser::parseStatment() {
 ASTNode* Parser::parseIfStatement() {
     advance(); // consume if
     ASTNode* condition = parseComparison();
-    
+    ASTNode* thenBlock = parseBlock();
+
+    std::vector<ASTNode*> children;
+    children.push_back(condition);
+    children.push_back(thenBlock);
+
+    while (currentToken().type == TokenType::ELSE) {
+        advance(); // consume else
+        if (currentToken().type == TokenType::IF) {
+            advance(); // consume if
+            ASTNode* elseIfCondition = parseComparison();
+            ASTNode* elseIfBlock = parseBlock();
+            children.push_back(elseIfCondition);
+            children.push_back(elseIfBlock);
+        } else {
+            ASTNode* elseBlock = parseBlock();
+            children.push_back(elseBlock);
+            break;
+        }
+    }
+
+    return new ASTNode(NodeType::IF, children);
 }
 
-// ASTNode* Parser::parseBlock() {
-//     advance(); // consume {
-//     std::vector<ASTNode*> statements;
-//     while (currentToken().type != TokenType::RBRACE) {
-//         statements.push_back(parseStatment());
-//     }
-//     advance(); // consume }
-//     // For simplicity, we return the first statement in the block
-// }
+ASTNode* Parser::parseBlock() {
+    if (currentToken().type != TokenType::LBRACE) {
+        throw std::runtime_error("Expected '{' to start block");
+    }
+    advance(); // consume {
+    std::vector<ASTNode*> statements;
+    while (currentToken().type != TokenType::RBRACE) {
+        if (currentToken().type == TokenType::END) {
+            throw std::runtime_error("Unexpected end of input in block");
+        }
+        statements.push_back(parseStatment());
+    }
+    advance(); // consume }
+    return new ASTNode(NodeType::BLOCK, statements);
+}
 
 ASTNode* Parser::parseComparison() {
     ASTNode* left = parseExpr();

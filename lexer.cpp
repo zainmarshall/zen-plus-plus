@@ -35,6 +35,10 @@ std::vector<Token> Lexer::tokenize() {
                 tokens.push_back({TokenType::TRUE, 0});
             } else if (ident == "false") {
                 tokens.push_back({TokenType::FALSE, 0});
+            } else if (ident == "if") {
+                tokens.push_back({TokenType::IF, 0});
+            } else if (ident == "else") {
+                tokens.push_back({TokenType::ELSE, 0});
             } else {
                 tokens.push_back({TokenType::IDENTIFIER, 0, ident});
             }
@@ -61,6 +65,8 @@ std::vector<Token> Lexer::tokenize() {
             case '=': tokens.push_back({TokenType::ASSIGN, 0}); break;
             case '<': tokens.push_back({TokenType::LESS, 0}); break;
             case '>': tokens.push_back({TokenType::GREATER, 0}); break;
+            case '{': tokens.push_back({TokenType::LBRACE, 0}); break;
+            case '}': tokens.push_back({TokenType::RBRACE, 0}); break;
         }
         advance();
     }

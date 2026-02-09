@@ -50,6 +50,36 @@ int evaluate(const ASTNode* node) {
         case NodeType::LESS_EQUAL: return evaluate(node->left) <= evaluate(node->right);
         case NodeType::GREATER_EQUAL: return evaluate(node->left) >= evaluate(node->right);
         case NodeType::NOT: return !evaluate(node->left);
+        case NodeType::BLOCK: {
+            int result = 0;
+            for (const auto* stmt : node->children) {
+                result = evaluate(stmt);
+            }
+            return result;
+        }
+        case NodeType::IF: {
+            if (node->children.size() < 2) {
+                throw std::runtime_error("Malformed if node");
+            }
+            if (evaluate(node->children[0])) {
+                return evaluate(node->children[1]);
+            }
+            size_t i = 2;
+            while (i + 1 < node->children.size()) {
+                if (evaluate(node->children[i])) {
+                    return evaluate(node->children[i + 1]);
+                }
+                i += 2;
+            }
+            if (i < node->children.size()) {
+                return evaluate(node->children[i]);
+            }
+            return 0;
+        }
+        case NodeType::ELSE:
+        case NodeType::ELSE_IF:
+            throw std::runtime_error("Unexpected standalone else node");
+        
       
     }
     return 0; 
@@ -58,17 +88,32 @@ int evaluate(const ASTNode* node) {
 // REPL
 int main(){
     std::string line;
+    std::string buffer;
     while(true){
         std::cout << "zen++> ";
-        if(!std::getline(std::cin, line) || line == "exit"){
+        if(!std::getline(std::cin, line)){
             break;
         }
+        if(line == "exit"){
+            break;
+        }
+        if(line.empty()){
+            if(buffer.empty()){
+                continue;
+            }
+            Lexer lexer(buffer);
+            auto tokens = lexer.tokenize();
+            Parser parser(tokens);
+            ASTNode* ast = parser.parseExpression();
+            int result = evaluate(ast);
+            std::cout << result << "\n";
+            buffer.clear();
+            continue;
+        }
+        if(!buffer.empty()){
+            buffer += "\n";
+        }
+        buffer += line;
 
-        Lexer lexer(line);
-        auto tokens = lexer.tokenize();
-        Parser parser(tokens);
-        ASTNode* ast = parser.parseExpression();
-        int result = evaluate(ast);
-        std::cout << result << "\n";
     }
 }
