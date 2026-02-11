@@ -133,6 +133,7 @@ int evaluate(const ASTNode* node) {
 int main(){
     std::string line;
     std::string buffer;
+    int braceDepth = 0;
     while(true){
         std::cout << "zen++> ";
         if(!std::getline(std::cin, line)){
@@ -142,9 +143,21 @@ int main(){
             break;
         }
         if(line.empty()){
-            if(buffer.empty()){
+            if(buffer.empty() || braceDepth > 0){
                 continue;
             }
+        }
+        if(!line.empty()){
+            if(!buffer.empty()){
+                buffer += "\n";
+            }
+            buffer += line;
+            for(char c : line){
+                if(c == '{') braceDepth++;
+                else if(c == '}') braceDepth--;
+            }
+        }
+        if(!buffer.empty() && braceDepth == 0){
             Lexer lexer(buffer);
             auto tokens = lexer.tokenize();
             Parser parser(tokens);
@@ -152,19 +165,7 @@ int main(){
             int result = evaluate(ast);
             std::cout << result << "\n";
             buffer.clear();
-            continue;
         }
-        if(buffer.empty()){
-            Lexer lexer(line);
-            auto tokens = lexer.tokenize();
-            Parser parser(tokens);
-            ASTNode* ast = parser.parseExpression();
-            int result = evaluate(ast);
-            std::cout << result << "\n";
-            continue;
-        }
-        buffer += "\n";
-        buffer += line;
 
     }
 }

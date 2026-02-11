@@ -53,3 +53,27 @@ What changed:
 3. The evaluator now runs blocks and if/else nodes.
 4. The REPL buffers lines and runs the program when you submit a blank line.
 
+## Zen++ Devlog V
+Ok so in this devlog I spent a lot of time thinking about syntax and I would like some feedback about for loops. 
+First though, while loops were simple (not simple to implement these loops cooked me in coding but syntaxically simple), its just. 
+```
+while boolean {
+do this code here yeah
+}
+```
+So while loops are very simple. Now for loops were a pain. I wanted them to be simple as this is meant to be super fast to write for competitive programming and the likes. So for this I took inspiration from my C++ template file. 
+```
+#define FOR(i, a) for(int i = 0; i < a; i++)
+#define ROF(i, a) for(int i = a; i >= 0; i--)
+#define FORA(i, a, b) for(int i = a; i <= b; i++)
+#define ROFA(i, a, b) for(int i = a; i >= b; i--)
+```
+That's how I macro for loops during Codeforces contests. So instead of
+`for(int i=0;i<n;i++){...}` I can just do `FOR(i,n)`. Now I wanted something nice and simple for Zen++ to. So I landed on this:
+A four loop has four components, the variable used, the start, the end, and the step. So why not instead of writing those as a declaration, a boolean, and an incrementation like in C++, just treat those almost as paramateres to a method. So thats what I did. 
+`for i start end step {...}`
+Thats the syntax. If you want a reverse for loop you just make end bigger than start and step will be negative. 
+There is a 3-arg version which defaults step to 1 or -1 depending on direction and looks like: `for i start end{...}` and there is a 2-arg one which is: `for i end{...}` and defaults step to +1 and start to 0. So for codeforces you can just write `for i n{...}`. Very simple, but leave comments if you think its ugly. Its exclusive by default rn with no way to make it inclusive, I'll fix that later.
+
+### Changelog
+- [for and while loops](https://github.com/zainmarshall/zen-plus-plus/commit/76827c96c3a7b0ecc0506863044d49ed92a2dfe3)
