@@ -14,7 +14,7 @@ enum class NodeType{
     BOOL,
     EQUALS, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL, NOT_EQUAL,
     NOT,
-    IF, ELSE, ELSE_IF,
+    IF, ELSE, ELSE_IF, WHILE, FOR,
     BLOCK
 };
 

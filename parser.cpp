@@ -30,6 +30,12 @@ ASTNode* Parser::parseStatment() {
     if(tok.type == TokenType::IF) {
        return parseIfStatement();
     }
+    if(tok.type == TokenType::WHILE) {
+        return parseWhileStatement();
+    }
+    if(tok.type == TokenType::FOR) {
+        return parseForStatement();
+    }
     if(tok.type == TokenType::IDENTIFIER && peekToken().type == TokenType::ASSIGN){
         std::string varName = tok.name;
         advance();
@@ -65,6 +71,67 @@ ASTNode* Parser::parseIfStatement() {
     }
 
     return new ASTNode(NodeType::IF, children);
+}
+
+ASTNode* Parser::parseWhileStatement() {
+    advance(); // consume while
+    ASTNode* condition = parseComparison();
+    ASTNode* body = parseBlock();
+    std::vector<ASTNode*> children;
+    children.push_back(condition);
+    children.push_back(body);
+    return new ASTNode(NodeType::WHILE, children);
+}
+
+ASTNode* Parser::parseForStatement() {
+    advance(); // consume for
+    if (currentToken().type != TokenType::IDENTIFIER) {
+        throw std::runtime_error("Expected identifier after 'for'");
+    }
+    std::string varName = currentToken().name;
+    advance();
+
+    std::vector<ASTNode*> parts;
+    while (currentToken().type != TokenType::LBRACE) {
+        if (currentToken().type == TokenType::END) {
+            throw std::runtime_error("Unexpected end of input in for statement");
+        }
+        if (parts.size() >= 3) {
+            throw std::runtime_error("For loop accepts at most 3 expressions before block");
+        }
+        parts.push_back(parseComparison());
+    }
+
+    if (parts.empty()) {
+        throw std::runtime_error("For loop requires at least an end expression");
+    }
+
+    ASTNode* startExpr = nullptr;
+    ASTNode* endExpr = nullptr;
+    ASTNode* stepExpr = nullptr;
+
+    if (parts.size() == 1) {
+        startExpr = new ASTNode(0);
+        endExpr = parts[0];
+    } else if (parts.size() == 2) {
+        startExpr = parts[0];
+        endExpr = parts[1];
+    } else {
+        startExpr = parts[0];
+        endExpr = parts[1];
+        stepExpr = parts[2];
+    }
+
+    ASTNode* body = parseBlock();
+    std::vector<ASTNode*> children;
+    children.push_back(new ASTNode(varName));
+    children.push_back(startExpr);
+    children.push_back(endExpr);
+    if (stepExpr != nullptr) {
+        children.push_back(stepExpr);
+    }
+    children.push_back(body);
+    return new ASTNode(NodeType::FOR, children);
 }
 
 ASTNode* Parser::parseBlock() {

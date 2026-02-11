@@ -76,6 +76,50 @@ int evaluate(const ASTNode* node) {
             }
             return 0;
         }
+        case NodeType::WHILE: {
+            if (node->children.size() != 2) {
+                throw std::runtime_error("Malformed while node");
+            }
+            int result = 0;
+            while (evaluate(node->children[0])) {
+                result = evaluate(node->children[1]);
+            }
+            return result;
+        }
+        case NodeType::FOR: {
+            if (node->children.size() < 4 || node->children.size() > 5) {
+                throw std::runtime_error("Malformed for node");
+            }
+
+            const ASTNode* varNode = node->children[0];
+            if (varNode->type != NodeType::IDENT) {
+                throw std::runtime_error("For loop variable must be an identifier");
+            }
+
+            int start = evaluate(node->children[1]);
+            int end = evaluate(node->children[2]);
+            int step = 0;
+            const ASTNode* body = nullptr;
+
+            if (node->children.size() == 5) {
+                step = evaluate(node->children[3]);
+                body = node->children[4];
+            } else {
+                step = (start <= end) ? 1 : -1;
+                body = node->children[3];
+            }
+
+            if (step == 0) {
+                throw std::runtime_error("For loop step cannot be 0");
+            }
+
+            int result = 0;
+            for (int i = start; (step > 0) ? (i < end) : (i > end); i += step) {
+                variables[varNode->name] = i;
+                result = evaluate(body);
+            }
+            return result;
+        }
         case NodeType::ELSE:
         case NodeType::ELSE_IF:
             throw std::runtime_error("Unexpected standalone else node");
@@ -110,9 +154,16 @@ int main(){
             buffer.clear();
             continue;
         }
-        if(!buffer.empty()){
-            buffer += "\n";
+        if(buffer.empty()){
+            Lexer lexer(line);
+            auto tokens = lexer.tokenize();
+            Parser parser(tokens);
+            ASTNode* ast = parser.parseExpression();
+            int result = evaluate(ast);
+            std::cout << result << "\n";
+            continue;
         }
+        buffer += "\n";
         buffer += line;
 
     }

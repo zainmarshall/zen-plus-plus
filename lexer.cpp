@@ -39,6 +39,10 @@ std::vector<Token> Lexer::tokenize() {
                 tokens.push_back({TokenType::IF, 0});
             } else if (ident == "else") {
                 tokens.push_back({TokenType::ELSE, 0});
+            } else if (ident == "while") {
+                tokens.push_back({TokenType::WHILE, 0});
+            } else if (ident == "for") {
+                tokens.push_back({TokenType::FOR, 0});
             } else {
                 tokens.push_back({TokenType::IDENTIFIER, 0, ident});
             }

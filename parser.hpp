@@ -18,6 +18,8 @@ private:
     ASTNode* parseProgram();
     ASTNode* parseStatment();
     ASTNode* parseIfStatement();
+    ASTNode* parseWhileStatement();
+    ASTNode* parseForStatement();
     ASTNode* parseBlock();
     ASTNode* parseComparison();
     ASTNode* parseExpr();
