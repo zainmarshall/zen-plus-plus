@@ -17,12 +17,17 @@ private:
 
     ASTNode* parseProgram();
     ASTNode* parseStatment();
+    ASTNode* parseFunctionDefinition();
+    ASTNode* parseReturnStatement();
     ASTNode* parseIfStatement();
     ASTNode* parseWhileStatement();
     ASTNode* parseForStatement();
     ASTNode* parseBlock();
+    ASTNode* parseLogicalOr();
+    ASTNode* parseLogicalAnd();
     ASTNode* parseComparison();
     ASTNode* parseExpr();
     ASTNode* parseTerm();
+    ASTNode* parsePostfix();
     ASTNode* parseFactor();
 };

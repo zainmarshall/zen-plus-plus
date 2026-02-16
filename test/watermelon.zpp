@@ -1,0 +1,5 @@
+w=read()
+
+if w%2==1{
+    print('Y')
+  }

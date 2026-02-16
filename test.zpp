@@ -1,0 +1,84 @@
+// arithmetic
+x = 8
+y = 3
+print(x + y)
+print(x - y)
+print(x * y)
+print(x / y)
+print(x % y)
+print(5!)
+
+// booleans and conditionals
+print(x > y)
+print(x == y)
+
+if x > y {
+  print(100)
+} else if x == y {
+  print(200)
+} else {
+  print(300)
+}
+
+// while + ++
+i = 0
+while i < 3 {
+  print(i)
+  i++
+}
+
+// for loops
+for j 5 {
+  print(j)
+}
+
+// functions
+fn add(a, b) {
+  return a + b
+}
+print(add(10, 20))
+
+// strings
+s = "zen"
+t = "++"
+u = s + t
+print(s)
+print(t)
+print(u)
+print(len(u))
+print(u[1])
+
+// vectors basics
+v = [1, 2, 3]
+print(v)
+print(len(v))
+print(v[0])
+print(v[2])
+
+push(v, 10)
+push(v, 11)
+print(v)
+print(len(v))
+print(pop(v))
+print(v)
+
+// vector concat
+w = [100, 200]
+z = v + w
+print(z)
+print(len(z))
+
+// vector index assignment
+v[1] = 99
+print(v)
+v[0] = v[1] + 1
+print(v)
+
+// multidimensional array + nested index assignment
+m = [[1, 2], [3, 4], [5, 6]]
+print(m)
+print(m[1][0])
+m[1][0] = 77
+print(m)
+m[2][1] = m[1][0] + 5
+print(m)
