@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ZEN++ Playground</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="hero__text">
+          <p class="eyebrow">ZEN++</p>
+          <h1>Minimal interpreter, maximal clarity</h1>
+          <p class="subhead">This is a subheader thats pretty frigging cool.</p>
+        </div>
+      </header>
+
+      <main class="shell">
+        <section class="panel">
+          <div class="panel__header">
+            <span>Program</span>
+            <button id="run" class="btn">Run</button>
+          </div>
+          <div class="code-shell">
+            <pre id="source-highlight" class="code-highlight"></pre>
+            <textarea id="source" class="code-input" spellcheck="false"></textarea>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <span>Input</span>
+            <button id="clear" class="btn ghost">Clear</button>
+          </div>
+          <textarea id="stdin" spellcheck="false"></textarea>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <span>Output</span>
+          </div>
+          <pre id="stdout" class="output"></pre>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>Build with Emscripten: <code>web/README.md</code></span>
+      </footer>
+    </div>
+
+    <script src="zenpp.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

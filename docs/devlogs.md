@@ -3,7 +3,7 @@
 ## Zen++ Devlog I
 So I did a few things:
 1. I decided on the syntax of Zen++. Since I want to use it for like codeforces and stuff it should be very fast to type out while still being fast. So I decided on the syntax of the language. It will use curly braces to delineate blocks of code, no semicolons, for variables no let keyword and optional type so like x=1 for now. For loops and if statements no need for parentheses, just do while tc-- or if bool. See [idea.md](https://github.com/zainmarshall/zen-plus-plus/blob/master/idea.md) for more.
-2. I decided it'll be interpreted and I got started on basic math. So the way it works is you start with the statement in code, then a lexer tokenizes it (it identifies what is a parenthesis what is a plus sign, stuff like that), and then a parser takes the tokens and creates a hierarchy (so like pemdas) by making an Abstract Syntax Tree which we then evaluate by going to the bottom nodes, evaluating them and then propagating upwards. So very cool things. So far I just did basic binary arithmetic operations like + - * / % ^ and also a unary operator !. The code is made so its decently easy to add more tokens. 
+2. I decided it'll be interpreted and I got started on basic math. So the way it works is you start with the statement in code, then a lexer tokenizes it (it identifies what is a parenthesis what is a plus sign, stuff like that), and then a parser takes the tokens and creates a hierarchy (so like pemdas) by making an Abstract Syntax Tree which we then evaluate by going to the bottom nodes, evaluating them and then propagating upwards. So very cool things. So far I just did basic binary arithmetic operations like + - * / % ** and also a unary operator !. The code is made so its decently easy to add more tokens. 
 
 ### Changelog
 - [Binary and unary math parsing](https://github.com/zainmarshall/zen-plus-plus/commit/6b47222ef6b7e25698af0d838f0f9ab84607b67c)
@@ -77,3 +77,97 @@ There is a 3-arg version which defaults step to 1 or -1 depending on direction a
 
 ### Changelog
 - [for and while loops](https://github.com/zainmarshall/zen-plus-plus/commit/76827c96c3a7b0ecc0506863044d49ed92a2dfe3)
+
+
+## Zen++ Devlog VI
+This was a pretty big update but I didn't add anything that is syntaxically weird. I added functions, vectors, and strings. 
+
+### What changed:
+
+1. Functions + Returns
+    - Added parsing/eval support for `fn name(args){...}` and `return expr`.
+    - Function definitions are stored and callable later.
+    - Added function scope behavior so params/locals resolve correctly.
+    - This includes built-ins like `read()` and `print(...)`.
+
+2. Strings
+    - Lexer now tokenizes string literals.
+    - Parser builds string AST nodes.
+    - Runtime can store/print/concatenate strings.
+    - You can index into strings (`s[i]`) and use `len(s)`.
+
+3. Vectors (Dynamic Arrays)
+    - Added vector syntax: `[1, 2, 3]`.
+    - Added vector indexing: `v[i]`.
+    - Added built-ins:
+      - `len(v)`
+      - `push(v, x)`
+      - `pop(v)`
+    - Added vector concatenation through `+` when both sides are vectors.
+
+4. Multidimensonal vectors
+    - Because vectors can contain vectors, nested structures like `[[1,2],[3,4]]` just work.
+    - Nested indexing works (`m[1][0]`).
+
+5. Comments + Illegal Character Throwing
+    - Added support for comments:
+      - line comments `// ...`
+      - block comments `/* ... */`
+    - Added stricter behavior for unknown/invalid characters so bad input doesn’t silently pass.
+
+6. Reorginization
+    - `src/` now contains all `.cpp` + `.hpp` source files.
+    - `test/` now contains test scripts + expected output.
+    - `build/` now contains the compiled binaries
+    - `docs/` contains docs/devlogs.
+
+7. Makefile + Testing
+    - Added a `Makefile` with nice commands 
+    - `make run` launches REPL.
+    - `make run <file.zpp>` runs a file directly.
+    - Made `test.zpp` as a file with every command in the language and then wrote the expected output and made `make test` run the test script and compare output.
+
+### Changelog
+- [functions and vectors](https://github.com/zainmarshall/zen-plus-plus/commit/d19fdffdb83e6ddd26f84fa117deca582f15105b)
+- [multi line buffer](https://github.com/zainmarshall/zen-plus-plus/commit/21d4ee0f158fcb87086fad285c3050c5ea399126)
+
+## Zen++ Devlog VII
+This batch saw a lot of new, big features, and some minor ones. Big: data trctures, structs, imports. Small: bitwise operators, numberical type fixes, IO expansion. 
+
+### What changed
+1. Numeric types
+   - Integers are now 64-bit.
+   - Added float
+
+2. Operators
+   - Exponent operator is now `**`.
+   - `^`, `&`, `|` are bitwise operators.
+   - Added compound assignments for bitwise ops.
+
+3. IO
+   - Added `readInt()`, `readFloat()`, and `readLine()`.
+   - `read()` maps to `readInt()`.
+
+4. Structs + methods + member access
+   - New `struct Name { fn ... }` syntax.
+   - Method calls with `obj.method(...)` and field access with `obj.field`.
+   - Assignment to fields supported (`obj.field = x`).
+
+5. Imports + stdlib bundle
+   - New `import file` and `import std`.
+   - Stdlib is bundled via `stdlib/manifest.txt` and loaded by `import std`.
+
+6. Data structures
+   - Hash table in runtime (map/set) for O(1).
+   - Exposed as stdlib `Map` and `Set` structs.
+   - Added DSU, PriorityQueue, Stack, Queue, Pair, Tuple in stdlib.
+
+7. Tests
+    - Test runner has more complete coverage.
+
+8. Math functions
+    - Added standard math functions like `min(a,b)`, `gcd(a,b)` and `abs(a)` to stdlib bundle
+
+
+## Zen++ Devlog VIII
+Web demo work (WASM + UI). I’m splitting this out so I can expand on it later.

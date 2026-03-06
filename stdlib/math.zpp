@@ -1,0 +1,27 @@
+// Math helpers for ZEN++.
+
+fn min(a, b) {
+    if a < b { return a }
+    return b
+}
+
+fn max(a, b) {
+    if a > b { return a }
+    return b
+}
+
+fn abs(x) {
+    if x < 0 { return -x }
+    return x
+}
+
+fn gcd(a, b) {
+    a = abs(a)
+    b = abs(b)
+    while b != 0 {
+        t = a % b
+        a = b
+        b = t
+    }
+    return a
+}

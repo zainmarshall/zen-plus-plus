@@ -64,7 +64,7 @@ Example Program:
 fn solve(){
     n = read()
     if n%2==0{
-        print(n^2)
+        print(n ** 2)
     }
 }
 

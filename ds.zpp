@@ -1,0 +1,11 @@
+import std
+
+map m
+m.set("a", 5)
+print(m.get("a", 0))
+print(m.has("b"))
+
+set s
+s.add(10)
+print(s.has(10))
+

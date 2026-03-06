@@ -10,7 +10,7 @@ mkdir -p build
 g++ -std=c++17 -Wall -Wextra -pedantic src/main.cpp src/lexer.cpp src/parser.cpp -o build/zenpp
 
 echo "[2/3] Running test.zpp..."
-./build/zenpp test/test.zpp > build/actual_output.txt
+printf "7 8\n" | ./build/zenpp test/test.zpp > build/actual_output.txt
 
 echo "[3/3] Comparing output..."
 if diff -u test/output.txt build/actual_output.txt; then

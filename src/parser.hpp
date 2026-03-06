@@ -17,6 +17,8 @@ private:
 
     ASTNode* parseProgram();
     ASTNode* parseStatment();
+    ASTNode* parseImportStatement();
+    ASTNode* parseStructDefinition();
     ASTNode* parseFunctionDefinition();
     ASTNode* parseReturnStatement();
     ASTNode* parseIfStatement();
@@ -25,6 +27,9 @@ private:
     ASTNode* parseBlock();
     ASTNode* parseLogicalOr();
     ASTNode* parseLogicalAnd();
+    ASTNode* parseBitwiseOr();
+    ASTNode* parseBitwiseXor();
+    ASTNode* parseBitwiseAnd();
     ASTNode* parseComparison();
     ASTNode* parseExpr();
     ASTNode* parseTerm();

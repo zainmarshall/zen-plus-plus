@@ -1,6 +1,7 @@
 #include "parser.hpp"
 #include "ASTNode.hpp"
 #include <stdexcept>
+#include <cstdint>
 
 Parser::Parser(const std::vector<Token>& toks) : tokens(toks), pos(0) {}
 
@@ -30,6 +31,12 @@ ASTNode* Parser::parseStatment() {
     if (tok.type == TokenType::RETURN) {
         return parseReturnStatement();
     }
+    if (tok.type == TokenType::IMPORT) {
+        return parseImportStatement();
+    }
+    if (tok.type == TokenType::STRUCT) {
+        return parseStructDefinition();
+    }
     if (tok.type == TokenType::FN) {
         return parseFunctionDefinition();
     }
@@ -43,10 +50,24 @@ ASTNode* Parser::parseStatment() {
         return parseForStatement();
     }
     if(tok.type == TokenType::IDENTIFIER) {
+        if (tok.name == "map" && peekToken().type == TokenType::IDENTIFIER) {
+            advance(); // consume 'map'
+            std::string name = currentToken().name;
+            advance();
+            return new ASTNode(NodeType::ASSIGN, new ASTNode(name),
+                new ASTNode(NodeType::FUNCTION_CALL, "Map", std::vector<ASTNode*>{}));
+        }
+        if (tok.name == "set" && peekToken().type == TokenType::IDENTIFIER) {
+            advance(); // consume 'set'
+            std::string name = currentToken().name;
+            advance();
+            return new ASTNode(NodeType::ASSIGN, new ASTNode(name),
+                new ASTNode(NodeType::FUNCTION_CALL, "Set", std::vector<ASTNode*>{}));
+        }
         size_t startPos = pos;
         ASTNode* lhs = parsePostfix();
         if (currentToken().type == TokenType::ASSIGN &&
-            (lhs->type == NodeType::IDENT || lhs->type == NodeType::INDEX)) {
+            (lhs->type == NodeType::IDENT || lhs->type == NodeType::INDEX || lhs->type == NodeType::MEMBER)) {
             advance();
             ASTNode* exprNode = parseLogicalOr();
             return new ASTNode(NodeType::ASSIGN, lhs, exprNode);
@@ -78,6 +99,9 @@ ASTNode* Parser::parseStatment() {
             case TokenType::SLASH_ASSIGN: opType = NodeType::DIV; break;
             case TokenType::MOD_ASSIGN: opType = NodeType::MOD; break;
             case TokenType::EXP_ASSIGN: opType = NodeType::EXP; break;
+            case TokenType::BIT_AND_ASSIGN: opType = NodeType::BIT_AND; break;
+            case TokenType::BIT_OR_ASSIGN: opType = NodeType::BIT_OR; break;
+            case TokenType::BIT_XOR_ASSIGN: opType = NodeType::BIT_XOR; break;
             default: isCompound = false; break;
         }
         if (isCompound) {
@@ -96,6 +120,41 @@ ASTNode* Parser::parseReturnStatement() {
     advance(); // consume return
     ASTNode* value = parseLogicalOr();
     return new ASTNode(NodeType::RETURN, value, nullptr);
+}
+
+ASTNode* Parser::parseImportStatement() {
+    advance(); // consume import
+    if (currentToken().type != TokenType::IDENTIFIER) {
+        throw std::runtime_error("Expected identifier after 'import'");
+    }
+    std::string name = currentToken().name;
+    advance();
+    return new ASTNode(NodeType::IMPORT, name, std::vector<ASTNode*>{});
+}
+
+ASTNode* Parser::parseStructDefinition() {
+    advance(); // consume struct
+    if (currentToken().type != TokenType::IDENTIFIER) {
+        throw std::runtime_error("Expected struct name after 'struct'");
+    }
+    std::string name = currentToken().name;
+    advance();
+    if (currentToken().type != TokenType::LBRACE) {
+        throw std::runtime_error("Expected '{' to start struct body");
+    }
+    advance(); // consume {
+    std::vector<ASTNode*> methods;
+    while (currentToken().type != TokenType::RBRACE) {
+        if (currentToken().type == TokenType::END) {
+            throw std::runtime_error("Unexpected end of input in struct body");
+        }
+        if (currentToken().type != TokenType::FN) {
+            throw std::runtime_error("Struct body can only contain function definitions");
+        }
+        methods.push_back(parseFunctionDefinition());
+    }
+    advance(); // consume }
+    return new ASTNode(NodeType::STRUCT_DEF, name, methods);
 }
 
 ASTNode* Parser::parseFunctionDefinition() {
@@ -140,7 +199,7 @@ ASTNode* Parser::parseFunctionDefinition() {
 
 ASTNode* Parser::parseIfStatement() {
     advance(); // consume if
-    ASTNode* condition = parseComparison();
+    ASTNode* condition = parseLogicalOr();
     ASTNode* thenBlock = parseBlock();
 
     std::vector<ASTNode*> children;
@@ -151,7 +210,7 @@ ASTNode* Parser::parseIfStatement() {
         advance(); // consume else
         if (currentToken().type == TokenType::IF) {
             advance(); // consume if
-            ASTNode* elseIfCondition = parseComparison();
+            ASTNode* elseIfCondition = parseLogicalOr();
             ASTNode* elseIfBlock = parseBlock();
             children.push_back(elseIfCondition);
             children.push_back(elseIfBlock);
@@ -167,7 +226,7 @@ ASTNode* Parser::parseIfStatement() {
 
 ASTNode* Parser::parseWhileStatement() {
     advance(); // consume while
-    ASTNode* condition = parseComparison();
+    ASTNode* condition = parseLogicalOr();
     ASTNode* body = parseBlock();
     std::vector<ASTNode*> children;
     children.push_back(condition);
@@ -191,7 +250,7 @@ ASTNode* Parser::parseForStatement() {
         if (parts.size() >= 3) {
             throw std::runtime_error("For loop accepts at most 3 expressions before block");
         }
-        parts.push_back(parseComparison());
+        parts.push_back(parseLogicalOr());
     }
 
     if (parts.empty()) {
@@ -267,10 +326,10 @@ ASTNode* Parser::parseComparison() {
 }
 
 ASTNode* Parser::parseLogicalAnd() {
-    ASTNode* node = parseComparison();
+    ASTNode* node = parseBitwiseOr();
     while (currentToken().type == TokenType::AND) {
         advance();
-        node = new ASTNode(NodeType::AND, node, parseComparison());
+        node = new ASTNode(NodeType::AND, node, parseBitwiseOr());
     }
     return node;
 }
@@ -280,6 +339,33 @@ ASTNode* Parser::parseLogicalOr() {
     while (currentToken().type == TokenType::OR) {
         advance();
         node = new ASTNode(NodeType::OR, node, parseLogicalAnd());
+    }
+    return node;
+}
+
+ASTNode* Parser::parseBitwiseOr() {
+    ASTNode* node = parseBitwiseXor();
+    while (currentToken().type == TokenType::BIT_OR) {
+        advance();
+        node = new ASTNode(NodeType::BIT_OR, node, parseBitwiseXor());
+    }
+    return node;
+}
+
+ASTNode* Parser::parseBitwiseXor() {
+    ASTNode* node = parseBitwiseAnd();
+    while (currentToken().type == TokenType::BIT_XOR) {
+        advance();
+        node = new ASTNode(NodeType::BIT_XOR, node, parseBitwiseAnd());
+    }
+    return node;
+}
+
+ASTNode* Parser::parseBitwiseAnd() {
+    ASTNode* node = parseComparison();
+    while (currentToken().type == TokenType::BIT_AND) {
+        advance();
+        node = new ASTNode(NodeType::BIT_AND, node, parseComparison());
     }
     return node;
 }
@@ -319,14 +405,48 @@ ASTNode* Parser::parseTerm() {
 
 ASTNode* Parser::parsePostfix() {
     ASTNode* node = parseFactor();
-    while (currentToken().type == TokenType::LBRACKET) {
-        advance();
-        ASTNode* indexExpr = parseLogicalOr();
-        if (currentToken().type != TokenType::RBRACKET) {
-            throw std::runtime_error("Expected ']' after index expression");
+    while (true) {
+        if (currentToken().type == TokenType::LBRACKET) {
+            advance();
+            ASTNode* indexExpr = parseLogicalOr();
+            if (currentToken().type != TokenType::RBRACKET) {
+                throw std::runtime_error("Expected ']' after index expression");
+            }
+            advance();
+            node = new ASTNode(NodeType::INDEX, node, indexExpr);
+            continue;
         }
-        advance();
-        node = new ASTNode(NodeType::INDEX, node, indexExpr);
+        if (currentToken().type == TokenType::DOT) {
+            advance();
+            if (currentToken().type != TokenType::IDENTIFIER) {
+                throw std::runtime_error("Expected identifier after '.'");
+            }
+            std::string memberName = currentToken().name;
+            advance();
+            if (currentToken().type == TokenType::LPAREN) {
+                advance();
+                std::vector<ASTNode*> args;
+                if (currentToken().type != TokenType::RPAREN) {
+                    while (true) {
+                        args.push_back(parseLogicalOr());
+                        if (currentToken().type == TokenType::COMMA) {
+                            advance();
+                            continue;
+                        }
+                        break;
+                    }
+                }
+                if (currentToken().type != TokenType::RPAREN) {
+                    throw std::runtime_error("Expected ')' after method arguments");
+                }
+                advance();
+                node = new ASTNode(NodeType::METHOD_CALL, node, memberName, args);
+            } else {
+                node = new ASTNode(NodeType::MEMBER, node, memberName);
+            }
+            continue;
+        }
+        break;
     }
     return node;
 }
@@ -361,9 +481,10 @@ ASTNode* Parser::parseFactor() {
         return parseFactor();
     }
     if (tok.type == TokenType::INT) { advance(); node = new ASTNode(tok.value); }
+    else if (tok.type == TokenType::FLOAT) { advance(); node = new ASTNode(NodeType::FLOAT, tok.fvalue); }
     else if (tok.type == TokenType::STRING) { advance(); node = new ASTNode(NodeType::STRING, tok.name); }
-    else if (tok.type == TokenType::TRUE) { advance(); node = new ASTNode(NodeType::BOOL, 1); }
-    else if (tok.type == TokenType::FALSE) { advance(); node = new ASTNode(NodeType::BOOL, 0); }
+    else if (tok.type == TokenType::TRUE) { advance(); node = new ASTNode(NodeType::BOOL, static_cast<std::int64_t>(1)); }
+    else if (tok.type == TokenType::FALSE) { advance(); node = new ASTNode(NodeType::BOOL, static_cast<std::int64_t>(0)); }
     else if (tok.type == TokenType::LBRACKET) {
         advance();
         std::vector<ASTNode*> elements;

@@ -8,8 +8,11 @@ print(x - y)
 print(x * y)
 print(x / y)
 print(x % y)
-print(x ^ y)
+print(x ** y)
 print(5!)
+print(x ^ y)
+print(x & y)
+print(x | y)
 
 // booleans + comparisons
 print(x == y)
@@ -84,3 +87,37 @@ print(len(z))
 nested = [v, w, [7, 8]]
 print(nested)
 print(nested[2][1])
+
+// stdlib data structures
+import std
+
+map m
+m.set("a", 5)
+m.set("b", 9)
+print(m.get("a", 0))
+print(m.has("c"))
+
+set s
+s.add(10)
+print(s.has(10))
+
+d = DSU()
+d.init(5)
+d.unite(1, 2)
+print(d.same(1, 2))
+
+pq = PriorityQueue()
+pq.init()
+pq.push(5)
+pq.push(2)
+pq.push(9)
+print(pq.top())
+
+p = Pair()
+p.init(7, 11)
+print(p.first)
+print(p.second)
+
+t = Tuple()
+t.init([1, 2, 3])
+print(t.get(2))

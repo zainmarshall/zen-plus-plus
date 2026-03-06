@@ -1,0 +1,157 @@
+// Data structure helpers for ZEN++.
+
+struct Stack {
+    fn init() {
+        self.data = []
+    }
+    fn push(v) {
+        push(self.data, v)
+        return len(self.data)
+    }
+    fn pop() {
+        return pop(self.data)
+    }
+    fn peek() {
+        return self.data[len(self.data) - 1]
+    }
+    fn size() {
+        return len(self.data)
+    }
+}
+
+struct Queue {
+    fn init() {
+        self.data = []
+    }
+    fn push(v) {
+        push(self.data, v)
+        return len(self.data)
+    }
+    fn pop() {
+        if len(self.data) == 0 { return 0 }
+        v = self.data[0]
+        i = 1
+        while i < len(self.data) {
+            self.data[i - 1] = self.data[i]
+            i++
+        }
+        pop(self.data)
+        return v
+    }
+    fn size() {
+        return len(self.data)
+    }
+}
+
+struct Map {
+    fn init() { self.data = map() }
+    fn set(key, value) { return self.data.set(key, value) }
+    fn get(key, default) { return self.data.get(key, default) }
+    fn has(key) { return self.data.has(key) }
+    fn remove(key) { return self.data.remove(key) }
+    fn size() { return self.data.size() }
+    fn clear() { return self.data.clear() }
+}
+
+struct Set {
+    fn init() { self.data = set() }
+    fn add(key) { return self.data.add(key) }
+    fn has(key) { return self.data.has(key) }
+    fn remove(key) { return self.data.remove(key) }
+    fn size() { return self.data.size() }
+    fn clear() { return self.data.clear() }
+}
+
+struct DSU {
+    fn init(n) {
+        self.parent = []
+        self.size = []
+        i = 0
+        while i < n {
+            push(self.parent, i)
+            push(self.size, 1)
+            i++
+        }
+    }
+    fn find(x) {
+        if self.parent[x] == x { return x }
+        self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+    }
+    fn unite(a, b) {
+        ra = self.find(a)
+        rb = self.find(b)
+        if ra == rb { return 0 }
+        if self.size[ra] < self.size[rb] {
+            t = ra
+            ra = rb
+            rb = t
+        }
+        self.parent[rb] = ra
+        self.size[ra] = self.size[ra] + self.size[rb]
+        return 1
+    }
+    fn same(a, b) {
+        return self.find(a) == self.find(b)
+    }
+}
+
+struct PriorityQueue {
+    fn init() { self.data = [] }
+    fn size() { return len(self.data) }
+    fn top() { return self.data[0] }
+    fn push(v) {
+        push(self.data, v)
+        i = len(self.data) - 1
+        while i > 0 {
+            p = (i - 1) / 2
+            if self.data[p] >= self.data[i] { i = 0 }
+            if i > 0 {
+                t = self.data[p]
+                self.data[p] = self.data[i]
+                self.data[i] = t
+                i = p
+            }
+        }
+    }
+    fn pop() {
+        if len(self.data) == 0 { return 0 }
+        out = self.data[0]
+        last = pop(self.data)
+        if len(self.data) == 0 { return out }
+        self.data[0] = last
+        i = 0
+        done = 0
+        while done == 0 {
+            l = i * 2 + 1
+            r = i * 2 + 2
+            if l >= len(self.data) { done = 1 }
+            if done == 0 {
+                j = l
+                if r < len(self.data) && self.data[r] > self.data[l] { j = r }
+                if self.data[i] >= self.data[j] { done = 1 }
+                if done == 0 {
+                    t = self.data[i]
+                    self.data[i] = self.data[j]
+                    self.data[j] = t
+                    i = j
+                }
+            }
+        }
+        return out
+    }
+}
+
+struct Pair {
+    fn init(a, b) {
+        self.first = a
+        self.second = b
+    }
+}
+
+struct Tuple {
+    fn init(values) { self.values = values }
+    fn get(i) { return self.values[i] }
+    fn set(i, v) { self.values[i] = v }
+    fn size() { return len(self.values) }
+}
