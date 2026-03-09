@@ -55,14 +55,14 @@ ASTNode* Parser::parseStatment() {
             std::string name = currentToken().name;
             advance();
             return new ASTNode(NodeType::ASSIGN, new ASTNode(name),
-                new ASTNode(NodeType::FUNCTION_CALL, "Map", std::vector<ASTNode*>{}));
+                new ASTNode(NodeType::FUNCTION_CALL, "map", std::vector<ASTNode*>{}));
         }
         if (tok.name == "set" && peekToken().type == TokenType::IDENTIFIER) {
             advance(); // consume 'set'
             std::string name = currentToken().name;
             advance();
             return new ASTNode(NodeType::ASSIGN, new ASTNode(name),
-                new ASTNode(NodeType::FUNCTION_CALL, "Set", std::vector<ASTNode*>{}));
+                new ASTNode(NodeType::FUNCTION_CALL, "set", std::vector<ASTNode*>{}));
         }
         size_t startPos = pos;
         ASTNode* lhs = parsePostfix();
@@ -387,17 +387,22 @@ ASTNode* Parser::parseExpr() {
     return node;
 }
 
-ASTNode* Parser::parseTerm() {
+ASTNode* Parser::parseExp() {
     ASTNode* node = parsePostfix();
+    if (currentToken().type == TokenType::EXP) {
+        advance();
+        node = new ASTNode(NodeType::EXP, node, parseExp()); // right-associative
+    }
+    return node;
+}
+
+ASTNode* Parser::parseTerm() {
+    ASTNode* node = parseExp();
     while (true) {
         Token tok = currentToken();
-        if(tok.type == TokenType::EXP) {
-            advance();
-            node = new ASTNode(NodeType::EXP, node, parsePostfix());
-        }
-        else if (tok.type == TokenType::STAR) { advance(); node = new ASTNode(NodeType::MUL, node, parsePostfix()); }
-        else if (tok.type == TokenType::SLASH) { advance(); node = new ASTNode(NodeType::DIV, node, parsePostfix()); }
-        else if (tok.type == TokenType::MOD) { advance(); node = new ASTNode(NodeType::MOD, node, parsePostfix()); }
+        if (tok.type == TokenType::STAR) { advance(); node = new ASTNode(NodeType::MUL, node, parseExp()); }
+        else if (tok.type == TokenType::SLASH) { advance(); node = new ASTNode(NodeType::DIV, node, parseExp()); }
+        else if (tok.type == TokenType::MOD) { advance(); node = new ASTNode(NodeType::MOD, node, parseExp()); }
         else break;
     }
     return node;
@@ -524,13 +529,19 @@ ASTNode* Parser::parseFactor() {
             }
             advance(); // consume )
             node = new ASTNode(NodeType::FUNCTION_CALL, tok.name, args);
+        } else if (currentToken().type == TokenType::PLUS_PLUS) {
+            advance();
+            node = new ASTNode(NodeType::POST_INCREMENT, new ASTNode(tok.name), nullptr);
+        } else if (currentToken().type == TokenType::MINUS_MINUS) {
+            advance();
+            node = new ASTNode(NodeType::POST_DECREMENT, new ASTNode(tok.name), nullptr);
         } else {
             node = new ASTNode(tok.name);
         }
     }
     else if (tok.type == TokenType::LPAREN) {
         advance();
-        node = parseExpr();
+        node = parseLogicalOr();
         if (currentToken().type != TokenType::RPAREN) throw std::runtime_error("Expected ')'");
         advance();
     }else{

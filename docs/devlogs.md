@@ -132,7 +132,7 @@ This was a pretty big update but I didn't add anything that is syntaxically weir
 - [multi line buffer](https://github.com/zainmarshall/zen-plus-plus/commit/21d4ee0f158fcb87086fad285c3050c5ea399126)
 
 ## Zen++ Devlog VII
-This batch saw a lot of new, big features, and some minor ones. Big: data trctures, structs, imports. Small: bitwise operators, numberical type fixes, IO expansion. 
+This batch saw a lot of new, big features, and some minor ones. Big: data structures, structs, imports. Small: bitwise operators, numerical type fixes, IO expansion. 
 
 ### What changed
 1. Numeric types

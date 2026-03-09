@@ -463,7 +463,17 @@ Value evaluate(const ASTNode* node) {
         }
         case NodeType::INDEX: {
             Value container = evaluate(node->left);
-            std::int64_t index = evaluate(node->right).asInt("Index operator");
+            Value indexVal = evaluate(node->right);
+            if (container.isMap()) {
+                HashKey key = toHashKey(indexVal, "map index");
+                auto& data = container.asMap("map index")->data;
+                auto it = data.find(key);
+                if (it == data.end()) {
+                    throw std::runtime_error("Key not found in map");
+                }
+                return it->second;
+            }
+            std::int64_t index = indexVal.asInt("Index operator");
             if (index < 0) {
                 throw std::runtime_error("Index cannot be negative");
             }
@@ -481,7 +491,7 @@ Value evaluate(const ASTNode* node) {
                 }
                 return Value(std::string(1, str[static_cast<size_t>(index)]));
             }
-            throw std::runtime_error("Index operator expects vector or string");
+            throw std::runtime_error("Index operator expects vector, string, or map");
         }
         case NodeType::ADD: {
             Value left = evaluate(node->left);
@@ -527,7 +537,9 @@ Value evaluate(const ASTNode* node) {
             Value right = evaluate(node->right);
             if (left.isNumber() && right.isNumber()) {
                 if (left.isInt() && right.isInt()) {
-                    return Value(left.asInt("Division") / right.asInt("Division"));
+                    std::int64_t divisor = right.asInt("Division");
+                    if (divisor == 0) throw std::runtime_error("Division by zero");
+                    return Value(left.asInt("Division") / divisor);
                 }
                 return Value(left.asDouble("Division") / right.asDouble("Division"));
             }
@@ -536,7 +548,9 @@ Value evaluate(const ASTNode* node) {
         case NodeType::MOD: {
             Value left = evaluate(node->left);
             Value right = evaluate(node->right);
-            return Value(left.asInt("Modulo") % right.asInt("Modulo"));
+            std::int64_t divisor = right.asInt("Modulo");
+            if (divisor == 0) throw std::runtime_error("Modulo by zero");
+            return Value(left.asInt("Modulo") % divisor);
         }
         case NodeType::EXP: {
             Value left = evaluate(node->left);
@@ -595,6 +609,20 @@ Value evaluate(const ASTNode* node) {
                 return value;
             }
             if (node->left->type == NodeType::INDEX) {
+                // Check if target is a map — handle map key assignment directly
+                if (node->left->left->type == NodeType::IDENT) {
+                    Value* base = findVariable(node->left->left->name);
+                    if (base == nullptr) {
+                        throw std::runtime_error("Undefined variable: " + node->left->left->name);
+                    }
+                    if (base->isMap()) {
+                        Value keyVal = evaluate(node->left->right);
+                        HashKey key = toHashKey(keyVal, "map index assignment");
+                        base->asMap("map index assignment")->data[key] = value;
+                        return value;
+                    }
+                }
+
                 std::function<Value&(const ASTNode*)> resolveIndexTarget = [&](const ASTNode* indexNode) -> Value& {
                     if (indexNode->type != NodeType::INDEX) {
                         throw std::runtime_error("Invalid index assignment target");
@@ -648,6 +676,18 @@ Value evaluate(const ASTNode* node) {
                 return value;
             }
             throw std::runtime_error("Invalid assignment target");
+        }
+        case NodeType::POST_INCREMENT:
+        case NodeType::POST_DECREMENT: {
+            std::string varName = node->left->name;
+            Value old = getVariable(varName);
+            std::int64_t delta = (node->type == NodeType::POST_INCREMENT) ? 1 : -1;
+            if (old.isInt()) {
+                setVariable(varName, Value(old.asInt("post-increment/decrement") + delta));
+            } else {
+                setVariable(varName, Value(old.asDouble("post-increment/decrement") + static_cast<double>(delta)));
+            }
+            return old;
         }
         case NodeType::BOOL: return Value(node->value);
         case NodeType::EQUALS: {
@@ -1331,6 +1371,7 @@ int runRepl() {
 }
 
 // CLI: `./zenpp` => REPL, `./zenpp <file>` => run file
+#ifndef __EMSCRIPTEN__
 int main(int argc, char* argv[]){
     if (argc == 1) {
         return runRepl();
@@ -1342,3 +1383,4 @@ int main(int argc, char* argv[]){
     std::cerr << "Usage: " << argv[0] << " [file]\n";
     return 1;
 }
+#endif

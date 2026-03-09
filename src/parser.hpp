@@ -33,6 +33,7 @@ private:
     ASTNode* parseComparison();
     ASTNode* parseExpr();
     ASTNode* parseTerm();
+    ASTNode* parseExp();
     ASTNode* parsePostfix();
     ASTNode* parseFactor();
 };

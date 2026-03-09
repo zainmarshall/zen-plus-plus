@@ -26,7 +26,8 @@ enum class NodeType{
     FUNCTION_DEF, FUNCTION_CALL, RETURN,
     STRUCT_DEF, MEMBER, METHOD_CALL,
     IMPORT,
-    BLOCK
+    BLOCK,
+    POST_INCREMENT, POST_DECREMENT
 };
 
 struct ASTNode {
@@ -34,8 +35,8 @@ struct ASTNode {
     std::int64_t value; // only for INT
     double fvalue; // only for FLOAT
     std::string name; // only for IDENT
-    ASTNode* left; 
-    ASTNode* right;
+    ASTNode* left = nullptr;
+    ASTNode* right = nullptr;
     std::vector<ASTNode*> children;
 
     // Constructors

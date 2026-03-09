@@ -123,7 +123,11 @@ runBtn.addEventListener("click", async () => {
     module._free(ptr);
     setOutput(text || "(no output)");
   } catch (err) {
-    setOutput(`Error: ${err.message || err}`);
+    if (typeof err === "number") {
+      setOutput("Runtime error: program threw an unhandled exception");
+    } else {
+      setOutput(`Error: ${err.message || err}`);
+    }
   }
 });
 
