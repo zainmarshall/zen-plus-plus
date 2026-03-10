@@ -49,7 +49,7 @@ test-all: build
 	$(TARGET) $(TEST_DIR)/all_features_test.zpp
 
 build-web:
-	@mkdir -p web
+	@mkdir -p docs
 	emcc -std=c++17 -O2 \
 	  src/main.cpp src/lexer.cpp src/parser.cpp \
 	  --no-entry \
@@ -58,10 +58,10 @@ build-web:
 	  -s EXPORTED_FUNCTIONS='["_zenpp_eval","_free"]' \
 	  -s EXPORTED_RUNTIME_METHODS='["cwrap","UTF8ToString"]' \
 	  -s DISABLE_EXCEPTION_CATCHING=0 \
-	  -o web/zenpp.js
+	  -o docs/zenpp.js
 
 run-web:
-	@cd web && python3 -m http.server 8080
+	@cd docs && python3 -m http.server 8080
 
 test-web: build-web
 	@bash $(TEST_DIR)/web_smoke.sh

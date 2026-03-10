@@ -31,6 +31,8 @@ inputEl.value = defaultInput;
 let zenppModulePromise = null;
 let abortSeen = false;
 
+/* ── Syntax highlighting ────────────────────────────── */
+
 function escapeHtml(text) {
   return text
     .replace(/&/g, "&amp;")
@@ -41,7 +43,7 @@ function escapeHtml(text) {
 function highlight(text) {
   const escaped = escapeHtml(text);
   const tokenRegex =
-    /\/\/.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|\\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set)\\b|\\b(?:read|readInt|readFloat|readLine|len|push|pop)\\b|\\b\\d+(?:\\.\\d+)?\\b|\\*\\*|==|!=|<=|>=|&&|\\|\\||[+*/%<>=^|&!-]/g;
+    /\/\/.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set)\b|\b(?:read|readInt|readFloat|readLine|len|push|pop|print|println|str|int|float|type|keys|values|has|remove|insert|sort|reverse|slice|split|join|charAt|toUpper|toLower|trim)\b|\b\d+(?:\.\d+)?\b|\*\*|==|!=|<=|>=|&&|\|\||[+*/%<>=^|&!\-]/g;
 
   return escaped.replace(tokenRegex, (match) => {
     if (match.startsWith("//") || match.startsWith("/*")) {
@@ -50,14 +52,14 @@ function highlight(text) {
     if (match.startsWith("\"")) {
       return `<span class="token-string">${match}</span>`;
     }
-    if (/^\\d/.test(match)) {
+    if (/^\d/.test(match)) {
       return `<span class="token-number">${match}</span>`;
     }
     if (/^(fn|if|else|while|for|return|true|false|struct|import|map|set)$/.test(match)) {
       return `<span class="token-keyword">${match}</span>`;
     }
-    if (/^(read|readInt|readFloat|readLine|len|push|pop)$/.test(match)) {
-      return `<span class="token-keyword">${match}</span>`;
+    if (/^(read|readInt|readFloat|readLine|len|push|pop|print|println|str|int|float|type|keys|values|has|remove|insert|sort|reverse|slice|split|join|charAt|toUpper|toLower|trim)$/.test(match)) {
+      return `<span class="token-builtin">${match}</span>`;
     }
     return `<span class="token-operator">${match}</span>`;
   });
@@ -73,6 +75,8 @@ function renderHighlight() {
   highlightEl.scrollTop = sourceEl.scrollTop;
   highlightEl.scrollLeft = sourceEl.scrollLeft;
 }
+
+/* ── WASM runtime ───────────────────────────────────── */
 
 function loadModule() {
   if (!zenppModulePromise) {

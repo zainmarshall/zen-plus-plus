@@ -170,4 +170,16 @@ This batch saw a lot of new, big features, and some minor ones. Big: data struct
 
 
 ## Zen++ Devlog VIII
-Web demo work (WASM + UI). I’m splitting this out so I can expand on it later.
+I compiled the C++ Interpreter over to Web Assembly so I could make a web interpreter for it. 
+
+### What Changed
+1. Made a web UI inspired by USACO IDE, with Input and outputed
+2. Added syntax highlighting to it
+3. Added runtime error messages
+4. Fixed bugs in the langauge
+5. Added tests for the website
+
+### Changelog
+- [move webs to docs](https://github.com/zainmarshall/zen-plus-plus/commit/6875f9a)
+- [web view](https://github.com/zainmarshall/zen-plus-plus/commit/2473e45)
+- [Structs + StdLib + Web](https://github.com/zainmarshall/zen-plus-plus/commit/002f27a)
