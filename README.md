@@ -172,6 +172,11 @@ import std
 
 See the full [Language Reference](docs/language-reference.md) for complete documentation with examples.
 
+## Samples & Docs
+
+- Samples index: [`samples/README.md`](samples/README.md)
+- Codeforces Round 2200: https://codeforces.com/contest/2200
+
 ## Examples
 
 See the [`samples/`](samples/) directory for example programs.
