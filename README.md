@@ -6,6 +6,24 @@ Zen++ features C-style syntax with curly braces, no semicolons, automatic type i
 
 **[Try it in your browser](https://zainmarshall.github.io/zen-plus-plus/)**
 
+## Installation
+
+### Interpreter
+
+```bash
+git clone https://github.com/zainmarshall/zen-plus-plus.git
+cd zen-plus-plus
+bash install.sh
+```
+
+This builds the interpreter and installs it to `/usr/local/bin`. Requires `make` and a C++17 compiler. After installing, run `zenpp` for the REPL or `zenpp file.zpp` to execute a file.
+
+### VS Code Extension
+
+Install **[Zen++ Language Support](https://marketplace.visualstudio.com/items?itemName=ZainMarshall.zenpp)** from the VS Code Marketplace for syntax highlighting.
+
+Or search "Zen++" in the VS Code extensions panel.
+
 ## Language Overview
 
 ### Variables
@@ -35,11 +53,11 @@ pi = 3.14
 ```zenpp
 // if / else if / else
 if x > 0 {
-    print("positive")
+    println("positive")
 } else if x == 0 {
-    print("zero")
+    println("zero")
 } else {
-    print("negative")
+    println("negative")
 }
 
 // while loop
@@ -80,17 +98,17 @@ Assignment: `=` `+=` `-=` `*=` `/=` `%=` `**=`
 ```zenpp
 v = [1, 2, 3]
 push(v, 4)
-print(v[0])       // 1
-print(len(v))     // 4
-print(pop(v))     // 4
+println(v[0])       // 1
+println(len(v))     // 4
+println(pop(v))     // 4
 ```
 
 ### Strings
 
 ```zenpp
 s = "hello" + " world"
-print(len(s))       // 11
-print(s[0])         // ascii value of 'h'
+println(len(s))       // 11
+println(s[0])         // ascii value of 'h'
 ```
 
 ### Maps & Sets
@@ -98,12 +116,12 @@ print(s[0])         // ascii value of 'h'
 ```zenpp
 m = map()
 m.set("key", 100)
-print(m.get("key", 0))   // 100
-print(m.has("key"))       // 1
+println(m.get("key", 0))   // 100
+println(m.has("key"))       // 1
 
 s = set()
 s.add(5)
-print(s.has(5))           // 1
+println(s.has(5))           // 1
 ```
 
 ### Structs
@@ -121,7 +139,7 @@ struct Point {
 
 p = Point()
 p.init(3, 4)
-print(p.dist())   // 25
+println(p.dist())   // 25
 ```
 
 ### Standard Library
@@ -138,7 +156,11 @@ import std
 
 | Function | Description |
 |----------|-------------|
-| `print(...)` | Print values separated by spaces, with newline |
+| `print(...)` | Print values separated by spaces (no newline) |
+| `println(...)` | Print values separated by spaces, with newline |
+| `ord(s)` | ASCII code of first character of string |
+| `chr(n)` | Single-character string from ASCII code |
+| `parseInt(s)` | Parse a string as an integer |
 | `read()` | Read integer from stdin |
 | `readFloat()` | Read float from stdin |
 | `readLine()` | Read line as string from stdin |

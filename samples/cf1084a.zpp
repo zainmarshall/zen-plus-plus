@@ -1,0 +1,22 @@
+// Codeforces 1084A - Eating Game
+// Find count of maximum elements
+import std;
+
+fn solve() {
+    n = read()
+    a = []
+    for i n { push(a, read()) }
+
+    mx = 0
+    for x in a {
+        mx=max(mx, x)
+    }
+    ans = 0
+    for x in a {
+        if x == mx { ans++ }
+    }
+    println(ans)
+}
+
+t = read()
+while t-- { solve() }

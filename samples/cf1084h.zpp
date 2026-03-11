@@ -1,0 +1,59 @@
+// Codeforces 1084H - Six Seven
+// Recursive mod-42 grouping
+import std
+
+INF = 4000000000000000000
+
+fn sort_vec(v) {
+    for i 1 len(v) {
+        j = i
+        while j > 0 && v[j] < v[j - 1] {
+            tmp = v[j]
+            v[j] = v[j - 1]
+            v[j - 1] = tmp
+            j--
+        }
+    }
+}
+
+fn f(a) {
+    if len(a) == 0 { return 0 }
+    if a[len(a) - 1] == 1 { return 5 }
+
+    mod6 = a[0] % 6
+    groups = []
+    for i 7 { push(groups, []) }
+
+    for x in a {
+        if x % 6 != mod6 { return INF }
+        r = (x - mod6) / 6 % 7
+        push(groups[r], x)
+    }
+
+    ans = INF
+    for r 7 {
+        k = (42 - 6 * r - mod6) % 42
+        next = []
+        for x in groups[r] {
+            push(next, (x + k) / 42)
+        }
+        rec = f(next)
+        if rec < INF {
+            val = k + 42 * rec
+            if val < ans { ans = val }
+        }
+    }
+    return ans
+}
+
+fn solve() {
+    n = read()
+    a = []
+    for i n { push(a, read()) }
+    sort_vec(a)
+    res = f(a)
+    if res >= INF { println(-1) } else { println(res) }
+}
+
+t = read()
+while t-- { solve() }

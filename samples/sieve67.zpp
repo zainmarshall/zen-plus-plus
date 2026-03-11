@@ -9,9 +9,9 @@ while t > 0 {
     }
   }
   if found == 1 {
-    print("YES")
+    println("YES")
   } else {
-    print("NO")
+    println("NO")
   }
   t--
 }

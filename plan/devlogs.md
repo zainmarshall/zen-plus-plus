@@ -88,7 +88,7 @@ This was a pretty big update but I didn't add anything that is syntaxically weir
     - Added parsing/eval support for `fn name(args){...}` and `return expr`.
     - Function definitions are stored and callable later.
     - Added function scope behavior so params/locals resolve correctly.
-    - This includes built-ins like `read()` and `print(...)`.
+    - This includes built-ins like `read()` and `println(...)`.
 
 2. Strings
     - Lexer now tokenizes string literals.
@@ -229,4 +229,10 @@ Big batch of changes getting ready for v1. A mix of language features, website f
 ## Attachments
 1. A screenshot of the extnension in the VSCode Marketplace (so cool!!!)
 2. A screenshot of intellsense in the web interpreter 
-3. Here is the link to the documentation: https://github.com/zainmarshall/zen-plus-plus/blob/master/docs/language-reference.md
+3. Here is the link to the documentation: https://github.com/zainmarshall/zen-plus-plus/blob/master/docs/language-reference.md 
+
+### Changelog
+- [Extension](https://github.com/zainmarshall/zen-plus-plus/commit/44e6e90)
+- [Create zenpp](https://github.com/zainmarshall/zen-plus-plus/commit/e70cf37)
+- [Extension](https://github.com/zainmarshall/zen-plus-plus/commit/5a3cb6d)
+- [Delete docs/README.md](https://github.com/zainmarshall/zen-plus-plus/commit/4039a76)

@@ -1,84 +1,84 @@
 // arithmetic
 x = 8
 y = 3
-print(x + y)
-print(x - y)
-print(x * y)
-print(x / y)
-print(x % y)
-print(5!)
+println(x + y)
+println(x - y)
+println(x * y)
+println(x / y)
+println(x % y)
+println(5!)
 
 // booleans and conditionals
-print(x > y)
-print(x == y)
+println(x > y)
+println(x == y)
 
 if x > y {
-  print(100)
+  println(100)
 } else if x == y {
-  print(200)
+  println(200)
 } else {
-  print(300)
+  println(300)
 }
 
 // while + ++
 i = 0
 while i < 3 {
-  print(i)
+  println(i)
   i++
 }
 
 // for loops
 for j 5 {
-  print(j)
+  println(j)
 }
 
 // functions
 fn add(a, b) {
   return a + b
 }
-print(add(10, 20))
+println(add(10, 20))
 
 // strings
 s = "zen"
 t = "++"
 u = s + t
-print(s)
-print(t)
-print(u)
-print(len(u))
-print(u[1])
+println(s)
+println(t)
+println(u)
+println(len(u))
+println(u[1])
 
 // vectors basics
 v = [1, 2, 3]
-print(v)
-print(len(v))
-print(v[0])
-print(v[2])
+println(v)
+println(len(v))
+println(v[0])
+println(v[2])
 
 push(v, 10)
 push(v, 11)
-print(v)
-print(len(v))
-print(pop(v))
-print(v)
+println(v)
+println(len(v))
+println(pop(v))
+println(v)
 
 // vector concat
 w = [100, 200]
 z = v + w
-print(z)
-print(len(z))
+println(z)
+println(len(z))
 
 // vector index assignment
 v[1] = 99
-print(v)
+println(v)
 v[0] = v[1] + 1
-print(v)
+println(v)
 
 // multidimensional array + nested index assignment
 m = [[1, 2], [3, 4], [5, 6]]
-print(m)
-print(m[1][0])
+println(m)
+println(m[1][0])
 m[1][0] = 77
-print(m)
+println(m)
 m[2][1] = m[1][0] + 5
-print(m)
+println(m)

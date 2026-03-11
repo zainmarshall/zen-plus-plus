@@ -1,0 +1,76 @@
+// Codeforces 1084G - Operation Permutation
+// DP on subsets of multiplicative ops, modular arithmetic
+
+MOD = 1000000007
+
+fn mpow(a, b) {
+    r = 1
+    a = a % MOD
+    while b > 0 {
+        if b % 2 == 1 {
+            r = r * a % MOD
+        }
+        b /= 2
+        a = a * a % MOD
+    }
+    return r
+}
+
+fn inv(a) {
+    return mpow(a, MOD - 2)
+}
+
+// precompute factorials
+facts = [1]
+for i 1 5001 {
+    push(facts, facts[i - 1] * i % MOD)
+}
+
+fn solve() {
+    n = read()
+    x = read()
+    x = x % MOD
+    mults = []
+    adds = 0
+    for i n {
+        line = readLine()
+        op = line[0]
+        v = parseInt(line[2:])
+        if op == "-" {
+            adds += MOD - v % MOD
+        } else if op == "+" {
+            adds += v % MOD
+        } else if op == "/" {
+            push(mults, inv(v % MOD))
+        } else {
+            push(mults, v % MOD)
+        }
+    }
+    adds = adds % MOD
+
+    m = len(mults)
+    dp = []
+    for i m + 1 { push(dp, 0) }
+    dp[0] = 1
+
+    for b in mults {
+        x = x * b % MOD
+        j = m
+        while j >= 1 {
+            dp[j] = (dp[j] + dp[j - 1] * b) % MOD
+            j--
+        }
+    }
+
+    S = 0
+    for i 0 m + 1 {
+        S = (S + dp[i] * facts[i] % MOD * facts[m - i] % MOD * inv(facts[m]) % MOD) % MOD
+    }
+    S = S * inv(m + 1) % MOD
+
+    ans = (x + adds * S) % MOD
+    println(ans)
+}
+
+t = read()
+while t-- { solve() }

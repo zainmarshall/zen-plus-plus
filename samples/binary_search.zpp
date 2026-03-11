@@ -16,5 +16,5 @@ fn binary_search(v, target) {
 }
 
 arr = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]
-print(binary_search(arr, 23))    // 5
-print(binary_search(arr, 10))    // -1
+println(binary_search(arr, 23))    // 5
+println(binary_search(arr, 10))    // -1

@@ -36,17 +36,17 @@ cond2 = x == 5
 Conditionals:
 
 if x < y {
-    print(x)
+    println(x)
 } else if x == y {
-    print("equal")
+    println("equal")
 } else {
-    print(y)
+    println(y)
 }
 Loops:
 
 tc = read()
 while tc-- {
-    print(tc)
+    println(tc)
 }
 Functions:
 
@@ -54,17 +54,17 @@ fn square(n) {
     return n * n
 }
 x = square(5)
-print(x)
+println(x)
 Built-in Functions:
 
 x = read()
-print(x)
+println(x)
 Example Program:
 
 fn solve(){
     n = read()
     if n%2==0{
-        print(n ** 2)
+        println(n ** 2)
     }
 }
 

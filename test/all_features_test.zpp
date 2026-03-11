@@ -3,90 +3,90 @@
 // arithmetic + assignment
 x = 7
 y = 3
-print(x + y)
-print(x - y)
-print(x * y)
-print(x / y)
-print(x % y)
-print(x ** y)
-print(5!)
-print(x ^ y)
-print(x & y)
-print(x | y)
+println(x + y)
+println(x - y)
+println(x * y)
+println(x / y)
+println(x % y)
+println(x ** y)
+println(5!)
+println(x ^ y)
+println(x & y)
+println(x | y)
 
 // booleans + comparisons
-print(x == y)
-print(x != y)
-print(x > y)
-print(x < y)
-print(x >= y)
-print(x <= y)
+println(x == y)
+println(x != y)
+println(x > y)
+println(x < y)
+println(x >= y)
+println(x <= y)
 
 // if / else-if / else
 if x < y {
-    print(111)
+    println(111)
 } else if x == y {
-    print(222)
+    println(222)
 } else {
-    print(333)
+    println(333)
 }
 
 // while loop + ++
 i = 0
 while i < 4 {
-    print(i)
+    println(i)
     i++
 }
 
 // for loop short form
 for j 5 {
-    print(j)
+    println(j)
 }
 
 // functions + return
 fn square(n) {
     return n * n
 }
-print(square(9))
+println(square(9))
 
 fn mix(a, b) {
     return a + b
 }
-print(mix(12, 30))
+println(mix(12, 30))
 
 // strings
 s = "zen"
 t = "++"
-print(s)
-print(t)
-print(s + t)
-print(len(s + t))
-print((s + t)[1])
+println(s)
+println(t)
+println(s + t)
+println(len(s + t))
+println((s + t)[1])
 
 // vectors
 v = [1, 2, 3]
-print(v)
-print(len(v))
-print(v[0])
-print(v[2])
+println(v)
+println(len(v))
+println(v[0])
+println(v[2])
 
 push(v, 10)
 push(v, 20)
-print(v)
-print(len(v))
+println(v)
+println(len(v))
 
 p = pop(v)
-print(p)
-print(v)
+println(p)
+println(v)
 
 w = [100, 200]
 z = v + w
-print(z)
-print(len(z))
+println(z)
+println(len(z))
 
 nested = [v, w, [7, 8]]
-print(nested)
-print(nested[2][1])
+println(nested)
+println(nested[2][1])
 
 // stdlib data structures
 import std
@@ -94,30 +94,30 @@ import std
 map m
 m.set("a", 5)
 m.set("b", 9)
-print(m.get("a", 0))
-print(m.has("c"))
+println(m.get("a", 0))
+println(m.has("c"))
 
 set s
 s.add(10)
-print(s.has(10))
+println(s.has(10))
 
 d = DSU()
 d.init(5)
 d.unite(1, 2)
-print(d.same(1, 2))
+println(d.same(1, 2))
 
 pq = PriorityQueue()
 pq.init()
 pq.push(5)
 pq.push(2)
 pq.push(9)
-print(pq.top())
+println(pq.top())
 
 p = Pair()
 p.init(7, 11)
-print(p.first)
-print(p.second)
+println(p.first)
+println(p.second)
 
 t = Tuple()
 t.init([1, 2, 3])
-print(t.get(2))
+println(t.get(2))

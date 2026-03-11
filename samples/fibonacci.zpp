@@ -6,5 +6,5 @@ fn fib(n) {
 
 t = read()
 while t-- {
-    print(fib(read()))
+    println(fib(read()))
 }

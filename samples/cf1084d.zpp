@@ -1,0 +1,60 @@
+// Codeforces 1084D - Portal
+// Split array, rotate inner segment so min is first, merge back
+
+fn solve() {
+    n = read()
+    x = read()
+    y = read()
+    x--
+    y--
+
+    a = []
+    b = []
+    for i n {
+        j = read()
+        if i <= x || i > y {
+            push(a, j)
+        } else {
+            push(b, j)
+        }
+    }
+
+    if len(b) > 0 {
+        // find index of minimum in b
+        mi = 0
+        for i 1 len(b) {
+            if b[i] < b[mi] { mi = i }
+        }
+        // rotate so min is first
+        nb = []
+        for i mi len(b) { push(nb, b[i]) }
+        for i mi { push(nb, b[i]) }
+        b = nb
+    }
+
+    m = -1
+    if len(b) > 0 { m = b[0] }
+
+    // find insertion point in a
+    pos = len(a)
+    for i len(a) {
+        if a[i] >= m {
+            pos = i
+            break
+        }
+    }
+
+    // build result: a[:pos] + b + a[pos:]
+    res = []
+    for i pos { push(res, a[i]) }
+    for i len(b) { push(res, b[i]) }
+    for i pos len(a) { push(res, a[i]) }
+    for i len(res) {
+        if i > 0 { print(" ") }
+        print(res[i])
+    }
+    println("")
+}
+
+t = read()
+while t-- { solve() }

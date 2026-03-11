@@ -1,0 +1,23 @@
+// Codeforces 1084C - Specialty String
+// Stack-based: cancel adjacent equal chars, check if empty
+import std
+
+fn solve() {
+    n = read()
+    s = readLine()
+
+    st = Stack()
+    st.init()
+    for i len(s) {
+        c = s[i]
+        if st.size() > 0 && c == st.peek() {
+            st.pop()
+        } else {
+            st.push(c)
+        }
+    }
+    if st.size() == 0 { println("YES") } else { println("NO") }
+}
+
+t = read()
+while t-- { solve() }

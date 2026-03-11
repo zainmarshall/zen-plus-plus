@@ -28,7 +28,7 @@ Zen++ uses curly-brace blocks, no semicolons, and whitespace-separated tokens. P
 
 ```zenpp
 x = 42
-print(x)
+println(x)
 ```
 
 ## Data Types
@@ -66,7 +66,7 @@ greeting = "hello\nworld"
 
 ```zenpp
 flag = true
-print(flag + 1)   // 2
+println(flag + 1)   // 2
 ```
 
 ### Vectors
@@ -128,12 +128,12 @@ x = "now a string"   // reassignment with different type is fine
 ### Arithmetic
 
 ```zenpp
-print(7 + 3)     // 10
-print(7 - 3)     // 4
-print(7 * 3)     // 21
-print(7 / 3)     // 2 (integer division)
-print(7 % 3)     // 1
-print(2 ** 10)   // 1024
+println(7 + 3)     // 10
+println(7 - 3)     // 4
+println(7 * 3)     // 21
+println(7 / 3)     // 2 (integer division)
+println(7 % 3)     // 1
+println(2 ** 10)   // 1024
 ```
 
 ### Factorial
@@ -141,8 +141,8 @@ print(2 ** 10)   // 1024
 The postfix `!` operator computes the factorial of a positive integer.
 
 ```zenpp
-print(5!)   // 120
-print(6!)   // 720
+println(5!)   // 120
+println(6!)   // 720
 ```
 
 ### Increment / Decrement
@@ -170,9 +170,9 @@ x **= 3     // 1
 ### Bitwise
 
 ```zenpp
-print(7 & 3)    // 3
-print(7 | 3)    // 7
-print(7 ^ 3)    // 4
+println(7 & 3)    // 3
+println(7 | 3)    // 7
+println(7 ^ 3)    // 4
 
 x = 15
 x &= 6         // 6
@@ -185,12 +185,12 @@ x ^= 3         // 13
 All comparisons return `1` (true) or `0` (false).
 
 ```zenpp
-print(3 == 3)    // 1
-print(3 != 4)    // 1
-print(3 < 4)     // 1
-print(3 > 4)     // 0
-print(3 >= 3)    // 1
-print(3 <= 2)    // 0
+println(3 == 3)    // 1
+println(3 != 4)    // 1
+println(3 < 4)     // 1
+println(3 > 4)     // 0
+println(3 >= 3)    // 1
+println(3 <= 2)    // 0
 ```
 
 ### Logical
@@ -198,10 +198,10 @@ print(3 <= 2)    // 0
 Short-circuit evaluation.
 
 ```zenpp
-print(1 && 0)    // 0
-print(1 || 0)    // 1
-print(!true)     // 0
-print(!false)    // 1
+println(1 && 0)    // 0
+println(1 || 0)    // 1
+println(!true)     // 0
+println(!false)    // 1
 ```
 
 ## Control Flow
@@ -211,11 +211,11 @@ print(!false)    // 1
 ```zenpp
 n = read()
 if n > 0 {
-    print("positive")
+    println("positive")
 } else if n == 0 {
-    print("zero")
+    println("zero")
 } else {
-    print("negative")
+    println("negative")
 }
 ```
 
@@ -226,7 +226,7 @@ Any non-zero value is truthy.
 ```zenpp
 i = 0
 while i < 10 {
-    print(i)
+    println(i)
     i++
 }
 ```
@@ -248,18 +248,18 @@ Three forms based on the number of arguments:
 // for variable count { body }
 // loops i from 0 to count-1
 for i 5 {
-    print(i)        // 0 1 2 3 4
+    println(i)        // 0 1 2 3 4
 }
 
 // for variable start end { body }
 // loops i from start to end-1
 for i 2 7 {
-    print(i)        // 2 3 4 5 6
+    println(i)        // 2 3 4 5 6
 }
 
 // for variable start end step { body }
 for i 10 0 -2 {
-    print(i)        // 10 8 6 4 2
+    println(i)        // 10 8 6 4 2
 }
 ```
 
@@ -273,7 +273,7 @@ fn add(a, b) {
 }
 
 result = add(3, 4)
-print(result)       // 7
+println(result)       // 7
 ```
 
 ### Recursion
@@ -284,7 +284,7 @@ fn fib(n) {
     return fib(n - 1) + fib(n - 2)
 }
 
-print(fib(10))   // 55
+println(fib(10))   // 55
 ```
 
 ### No Return Value
@@ -293,7 +293,7 @@ Functions without an explicit `return` return `0` by default.
 
 ```zenpp
 fn greet(name) {
-    print("hello " + name)
+    println("hello " + name)
 }
 ```
 
@@ -306,13 +306,13 @@ s = "hello"
 t = " world"
 
 // concatenation
-print(s + t)         // hello world
+println(s + t)         // hello world
 
 // length
-print(len(s))        // 5
+println(len(s))        // 5
 
 // indexing (returns single character)
-print(s[0])          // h
+println(s[0])          // h
 ```
 
 ### Escape Sequences
@@ -331,10 +331,10 @@ print(s[0])          // h
 
 ```zenpp
 v = [10, 20, 30]
-print(v[0])          // 10
-print(v[2])          // 30
+println(v[0])          // 10
+println(v[2])          // 30
 v[1] = 99
-print(v)             // [10, 99, 30]
+println(v)             // [10, 99, 30]
 ```
 
 ### Manipulation
@@ -342,7 +342,7 @@ print(v)             // [10, 99, 30]
 ```zenpp
 v = [1, 2, 3]
 push(v, 4)           // [1, 2, 3, 4]
-print(len(v))        // 4
+println(len(v))        // 4
 last = pop(v)        // last = 4, v = [1, 2, 3]
 ```
 
@@ -352,16 +352,16 @@ last = pop(v)        // last = 4, v = [1, 2, 3]
 a = [1, 2]
 b = [3, 4]
 c = a + b
-print(c)             // [1, 2, 3, 4]
+println(c)             // [1, 2, 3, 4]
 ```
 
 ### Nested Vectors
 
 ```zenpp
 grid = [[1, 2], [3, 4], [5, 6]]
-print(grid[1][0])    // 3
+println(grid[1][0])    // 3
 grid[2][1] = 99
-print(grid[2][1])    // 99
+println(grid[2][1])    // 99
 ```
 
 ## Maps
@@ -373,12 +373,12 @@ m = map()
 m.set("alice", 95)
 m.set("bob", 87)
 
-print(m.get("alice", 0))   // 95
-print(m.get("eve", -1))    // -1 (default)
-print(m.has("bob"))         // 1
+println(m.get("alice", 0))   // 95
+println(m.get("eve", -1))    // -1 (default)
+println(m.has("bob"))         // 1
 m.remove("bob")
-print(m.has("bob"))         // 0
-print(m.size())             // 1
+println(m.has("bob"))         // 0
+println(m.size())             // 1
 ```
 
 Shorthand declaration:
@@ -394,8 +394,8 @@ Maps support `[]` for reading and writing, like C++:
 ```zenpp
 m = map()
 m["name"] = "zen"       // same as m.set("name", "zen")
-print(m["name"])         // zen
-print(m["missing"])      // 0 (default for missing keys)
+println(m["name"])         // zen
+println(m["missing"])      // 0 (default for missing keys)
 ```
 
 ### Methods
@@ -419,10 +419,10 @@ s.add(10)
 s.add(20)
 s.add(10)            // duplicate, no effect
 
-print(s.has(10))     // 1
-print(s.has(30))     // 0
+println(s.has(10))     // 1
+println(s.has(30))     // 0
 s.remove(10)
-print(s.size())      // 1
+println(s.size())      // 1
 ```
 
 Shorthand: `set s` is equivalent to `s = set()`.
@@ -434,8 +434,8 @@ Sets support `[]` for membership checks:
 ```zenpp
 s = set()
 s.add(42)
-print(s[42])         // 1 (exists)
-print(s[99])         // 0 (not found)
+println(s[42])         // 1 (exists)
+println(s[99])         // 0 (not found)
 ```
 
 ### Methods
@@ -474,8 +474,8 @@ struct Point {
 
 p = Point()          // x=0, y=0 (defaults applied)
 p.init(3, 4)
-print(p.x)           // 3
-print(p.dist())      // 25
+println(p.x)           // 3
+println(p.dist())      // 25
 ```
 
 Fields are initialized with their default values when the struct is constructed, before `init()` is called.
@@ -501,8 +501,8 @@ c = Counter()
 c.init(0)
 c.increment()
 c.increment()
-print(c.get())       // 2
-print(c.value)       // 2 (direct field access)
+println(c.get())       // 2
+println(c.value)       // 2 (direct field access)
 ```
 
 ### Constructor
@@ -530,10 +530,10 @@ import "mylib"       // loads mylib.zpp
 ```zenpp
 import std
 
-print(min(3, 7))     // 3
-print(max(3, 7))     // 7
-print(abs(-5))        // 5
-print(gcd(12, 8))    // 4
+println(min(3, 7))     // 3
+println(max(3, 7))     // 7
+println(abs(-5))        // 5
+println(gcd(12, 8))    // 4
 ```
 
 ### Standard Library: Data Structures
@@ -546,9 +546,9 @@ s = Stack()
 s.init()
 s.push(10)
 s.push(20)
-print(s.peek())      // 20
-print(s.pop())       // 20
-print(s.size())      // 1
+println(s.peek())      // 20
+println(s.pop())       // 20
+println(s.size())      // 1
 ```
 
 #### Queue (FIFO)
@@ -559,8 +559,8 @@ q = Queue()
 q.init()
 q.push(10)
 q.push(20)
-print(q.pop())       // 10
-print(q.size())      // 1
+println(q.pop())       // 10
+println(q.size())      // 1
 ```
 
 #### DSU (Disjoint Set Union / Union-Find)
@@ -571,10 +571,10 @@ d = DSU()
 d.init(5)            // 5 elements: 0..4
 d.unite(1, 2)
 d.unite(3, 4)
-print(d.same(1, 2))  // 1
-print(d.same(1, 3))  // 0
+println(d.same(1, 2))  // 1
+println(d.same(1, 3))  // 0
 d.unite(2, 3)
-print(d.same(1, 4))  // 1
+println(d.same(1, 4))  // 1
 ```
 
 #### PriorityQueue (Max-Heap)
@@ -586,9 +586,23 @@ pq.init()
 pq.push(3)
 pq.push(7)
 pq.push(1)
-print(pq.top())      // 7
-print(pq.pop())      // 7
-print(pq.top())      // 3
+println(pq.top())      // 7
+println(pq.pop())      // 7
+println(pq.top())      // 3
+```
+
+#### MinPriorityQueue (Min-Heap)
+
+```zenpp
+import std
+pq = MinPriorityQueue()
+pq.init()
+pq.push(3)
+pq.push(7)
+pq.push(1)
+println(pq.top())      // 1
+println(pq.pop())      // 1
+println(pq.top())      // 3
 ```
 
 #### Pair and Tuple
@@ -598,21 +612,25 @@ import std
 
 p = Pair()
 p.init(10, 20)
-print(p.first)        // 10
-print(p.second)       // 20
+println(p.first)        // 10
+println(p.second)       // 20
 
 t = Tuple()
 t.init([1, 2, 3])
-print(t.get(0))       // 1
+println(t.get(0))       // 1
 t.set(1, 99)
-print(t.get(1))       // 99
+println(t.get(1))       // 99
 ```
 
 ## Built-in Functions
 
 | Function | Description |
 |----------|-------------|
-| `print(...)` | Print values separated by spaces, followed by newline |
+| `print(...)` | Print values separated by spaces (no newline) |
+| `println(...)` | Print values separated by spaces, followed by newline |
+| `ord(s)` | ASCII code of first character of string |
+| `chr(n)` | Single-character string from ASCII code |
+| `parseInt(s)` | Parse a string as an integer |
 | `read()` | Read an integer from stdin |
 | `readInt()` | Read an integer (alias for `read`) |
 | `readFloat()` | Read a float from stdin |
@@ -642,9 +660,9 @@ x = 42  // inline comment
 fn solve() {
     n = read()
     if n % 2 == 0 {
-        print(n ** 2)
+        println(n ** 2)
     } else {
-        print(n)
+        println(n)
     }
 }
 
@@ -677,7 +695,7 @@ for i 2 n + 1 {
 
 for i 2 n + 1 {
     if is_prime[i] {
-        print(i)
+        println(i)
     }
 }
 ```
@@ -702,8 +720,8 @@ fn binary_search(v, target) {
 }
 
 arr = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]
-print(binary_search(arr, 23))    // 5
-print(binary_search(arr, 10))    // -1
+println(binary_search(arr, 23))    // 5
+println(binary_search(arr, 10))    // -1
 ```
 
 ### Frequency Counter with Maps
@@ -728,7 +746,7 @@ for i n {
         best_count = c
     }
 }
-print(best)
+println(best)
 ```
 
 ### Graph BFS with Queue
@@ -762,7 +780,7 @@ q.push(0)
 
 while q.size() > 0 {
     node = q.pop()
-    print(node)
+    println(node)
     for j len(adj[node]) {
         neighbor = adj[node][j]
         if visited[neighbor] == 0 {
@@ -794,6 +812,6 @@ c.init(3)
 // traverse using a vector of nodes
 nodes = [a, b, c]
 for i len(nodes) {
-    print(nodes[i].val)
+    println(nodes[i].val)
 }
 ```

@@ -1,0 +1,76 @@
+// Codeforces 1084F - Mooclear Reactor 2
+// Greedy with MinPriorityQueue
+import std
+
+fn solve() {
+    n = read()
+    q = read()
+
+    // read particles as (x, y) pairs
+    ax = []
+    ay = []
+    for i n {
+        xi = read()
+        yi = read()
+        push(ax, xi)
+        push(ay, yi)
+    }
+
+    // sort indices by y descending (insertion sort)
+    idx = []
+    for i n { push(idx, i) }
+    for i 1 n {
+        j = i
+        while j > 0 && ay[idx[j]] > ay[idx[j - 1]] {
+            tmp = idx[j]
+            idx[j] = idx[j - 1]
+            idx[j - 1] = tmp
+            j--
+        }
+    }
+
+    // sweep k from n down to 0
+    pq = MinPriorityQueue()
+    pq.init()
+    ptr = 0
+    mx = 0
+    cur = 0
+    pref = []
+    for i n + 1 { push(pref, 0) }
+
+    k = n
+    while k >= 0 {
+        while ptr < n && ay[idx[ptr]] >= k {
+            xval = ax[idx[ptr]]
+            cur += xval
+            pq.push(xval)
+            ptr++
+        }
+        while pq.size() > k + 1 {
+            cur -= pq.pop()
+        }
+        if cur > mx { mx = cur }
+        if pq.size() <= k {
+            pref[k] = cur
+        } else {
+            pref[k] = cur - pq.top()
+        }
+        k--
+    }
+
+    for i 1 n + 1 {
+        if pref[i] < pref[i - 1] { pref[i] = pref[i - 1] }
+    }
+
+    // answer queries
+    for i q {
+        x = read()
+        y = read()
+        val = mx
+        if pref[y] + x > val { val = pref[y] + x }
+        println(val)
+    }
+}
+
+t = read()
+while t-- { solve() }

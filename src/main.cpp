@@ -338,6 +338,10 @@ std::int64_t readInt() {
         if (!(std::cin >> value)) {
             throw std::runtime_error("readInt() failed to read an integer from stdin");
         }
+        // consume trailing newline so readLine() works immediately after
+        int ch = std::cin.peek();
+        if (ch == '\r') { std::cin.get(); ch = std::cin.peek(); }
+        if (ch == '\n') std::cin.get();
         return value;
     }
 
@@ -364,6 +368,9 @@ std::int64_t readInt() {
     if (!sawDigit) {
         throw std::runtime_error("readInt() expects an integer");
     }
+    // consume trailing newline so readLine() works immediately after
+    if (inputBuffer.pos < n && s[inputBuffer.pos] == '\r') inputBuffer.pos++;
+    if (inputBuffer.pos < n && s[inputBuffer.pos] == '\n') inputBuffer.pos++;
     return value * sign;
 }
 
@@ -373,6 +380,10 @@ double readFloat() {
         if (!(std::cin >> value)) {
             throw std::runtime_error("readFloat() failed to read a float from stdin");
         }
+        // consume trailing newline so readLine() works immediately after
+        int ch = std::cin.peek();
+        if (ch == '\r') { std::cin.get(); ch = std::cin.peek(); }
+        if (ch == '\n') std::cin.get();
         return value;
     }
 
@@ -409,6 +420,9 @@ double readFloat() {
         throw std::runtime_error("readFloat() expects a float");
     }
     double value = std::stod(s.substr(start, inputBuffer.pos - start));
+    // consume trailing newline so readLine() works immediately after
+    if (inputBuffer.pos < n && s[inputBuffer.pos] == '\r') inputBuffer.pos++;
+    if (inputBuffer.pos < n && s[inputBuffer.pos] == '\n') inputBuffer.pos++;
     return value;
 }
 std::string readLine() {
@@ -1159,8 +1173,52 @@ Value evaluate(const ASTNode* node) {
                     }
                     std::cout << evaluate(node->children[i]).toString();
                 }
+                return Value(static_cast<std::int64_t>(0));
+            }
+
+            if (node->name == "println") {
+                for (size_t i = 0; i < node->children.size(); ++i) {
+                    if (i > 0) {
+                        std::cout << " ";
+                    }
+                    std::cout << evaluate(node->children[i]).toString();
+                }
                 std::cout << "\n";
                 return Value(static_cast<std::int64_t>(0));
+            }
+
+            if (node->name == "ord") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("ord() expects 1 argument");
+                }
+                Value v = evaluate(node->children[0]);
+                std::string s = v.asString("ord()");
+                if (s.empty()) {
+                    throw std::runtime_error("ord() called on empty string");
+                }
+                return Value(static_cast<std::int64_t>(static_cast<unsigned char>(s[0])));
+            }
+
+            if (node->name == "chr") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("chr() expects 1 argument");
+                }
+                Value v = evaluate(node->children[0]);
+                std::int64_t code = v.asInt("chr()");
+                return Value(std::string(1, static_cast<char>(code)));
+            }
+
+            if (node->name == "parseInt") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("parseInt() expects 1 argument");
+                }
+                Value v = evaluate(node->children[0]);
+                std::string s = v.asString("parseInt()");
+                try {
+                    return Value(static_cast<std::int64_t>(std::stoll(s)));
+                } catch (...) {
+                    throw std::runtime_error("parseInt() failed to parse: " + s);
+                }
             }
 
             auto it = functions.find(node->name);

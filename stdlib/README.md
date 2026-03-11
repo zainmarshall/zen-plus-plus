@@ -7,7 +7,7 @@ Use `import std` to load the stdlib bundle listed in `stdlib/manifest.txt`.
 - `Stack` and `Queue` (vector-backed)
 - `Map` and `Set` (backed by native hash tables)
 - `DSU` (disjoint set union)
-- `PriorityQueue` (max-heap)
+- `PriorityQueue` (max-heap) and `MinPriorityQueue` (min-heap)
 - `Pair` and `Tuple`
 
 ### Map / Set
@@ -20,12 +20,12 @@ import std
 map m    // sugar for: m = Map()
 m.init()
 m.set("a", 5)
-print(m.get("a", 0))
+println(m.get("a", 0))
 
 set s
 s.init()
 s.add(10)
-print(s.has(10))
+println(s.has(10))
 ```
 
 Methods:

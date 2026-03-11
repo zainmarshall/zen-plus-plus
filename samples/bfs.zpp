@@ -25,7 +25,7 @@ q.push(0)
 
 while q.size() > 0 {
     node = q.pop()
-    print(node)
+    println(node)
     for j len(adj[node]) {
         neighbor = adj[node][j]
         if visited[neighbor] == 0 {

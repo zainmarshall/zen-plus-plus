@@ -142,6 +142,52 @@ struct PriorityQueue {
     }
 }
 
+struct MinPriorityQueue {
+    fn init() { self.data = [] }
+    fn size() { return len(self.data) }
+    fn top() { return self.data[0] }
+    fn push(v) {
+        push(self.data, v)
+        i = len(self.data) - 1
+        while i > 0 {
+            p = (i - 1) / 2
+            if self.data[p] <= self.data[i] { i = 0 }
+            if i > 0 {
+                t = self.data[p]
+                self.data[p] = self.data[i]
+                self.data[i] = t
+                i = p
+            }
+        }
+    }
+    fn pop() {
+        if len(self.data) == 0 { return 0 }
+        out = self.data[0]
+        last = pop(self.data)
+        if len(self.data) == 0 { return out }
+        self.data[0] = last
+        i = 0
+        done = 0
+        while done == 0 {
+            l = i * 2 + 1
+            r = i * 2 + 2
+            if l >= len(self.data) { done = 1 }
+            if done == 0 {
+                j = l
+                if r < len(self.data) && self.data[r] < self.data[l] { j = r }
+                if self.data[i] <= self.data[j] { done = 1 }
+                if done == 0 {
+                    t = self.data[i]
+                    self.data[i] = self.data[j]
+                    self.data[j] = t
+                    i = j
+                }
+            }
+        }
+        return out
+    }
+}
+
 struct Pair {
     fn init(a, b) {
         self.first = a
