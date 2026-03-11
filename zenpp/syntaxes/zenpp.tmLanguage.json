@@ -1,0 +1,61 @@
+{
+  "scopeName": "source.zenpp",
+  "name": "Zen++",
+  "fileTypes": ["zpp"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#builtins" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "name": "comment.line.double-slash.zenpp", "match": "//.*$" },
+        { "name": "comment.block.zenpp", "begin": "/\\*", "end": "\\*/" }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.zenpp",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.zenpp", "match": "\\\\[ntr\\\\\"']" }
+          ]
+        },
+        {
+          "name": "constant.character.zenpp",
+          "match": "'[^'\\\\]'"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        { "name": "constant.numeric.float.zenpp", "match": "\\b\\d+\\.\\d+\\b" },
+        { "name": "constant.numeric.integer.zenpp", "match": "\\b\\d+\\b" }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        { "name": "keyword.control.zenpp", "match": "\\b(if|else|while|for|return|import)\\b" },
+        { "name": "keyword.other.zenpp", "match": "\\b(fn|struct|map|set)\\b" },
+        { "name": "constant.language.zenpp", "match": "\\b(true|false)\\b" },
+        { "name": "variable.language.zenpp", "match": "\\b(self)\\b" }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        { "name": "support.function.zenpp", "match": "\\b(print|read|readInt|readFloat|readLine|len|push|pop|min|max|abs|gcd)\\b" }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        { "name": "keyword.operator.zenpp", "match": "\\*\\*|==|!=|<=|>=|&&|\\|\\||[+\\-*/%<>=!&|^]" }
+      ]
+    }
+  }
+}

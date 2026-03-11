@@ -1,0 +1,26 @@
+{
+  "name": "zenpp",
+  "displayName": "Zen++ Language Support",
+  "description": "Syntax highlighting for the Zen++ programming language",
+  "version": "0.0.1",
+  "publisher": "ZainMarshall",
+  "engines": {
+    "vscode": "^1.110.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "zenpp",
+      "aliases": ["Zen++", "zenpp"],
+      "extensions": [".zpp"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "zenpp",
+      "scopeName": "source.zenpp",
+      "path": "./syntaxes/zenpp.tmLanguage.json"
+    }]
+  }
+}
