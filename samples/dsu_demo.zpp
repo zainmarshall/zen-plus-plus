@@ -1,0 +1,16 @@
+// Disjoint Set Union demo
+import std
+
+d = DSU()
+d.init(6)
+
+d.unite(0, 1)
+d.unite(2, 3)
+d.unite(4, 5)
+
+print(d.same(0, 1))   // 1
+print(d.same(0, 2))   // 0
+
+d.unite(1, 3)
+print(d.same(0, 2))   // 1
+print(d.same(0, 4))   // 0

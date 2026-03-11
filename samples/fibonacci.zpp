@@ -1,0 +1,10 @@
+// Fibonacci — read t test cases, print fib(n) for each
+fn fib(n) {
+    if n <= 1 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+
+t = read()
+while t-- {
+    print(fib(read()))
+}

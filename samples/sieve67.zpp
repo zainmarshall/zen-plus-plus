@@ -1,0 +1,17 @@
+t = read()
+while t > 0 {
+  n = read()
+  found = 0
+  for i n {
+    a = read()
+    if a == 67 {
+      found = 1
+    }
+  }
+  if found == 1 {
+    print("YES")
+  } else {
+    print("NO")
+  }
+  t--
+}

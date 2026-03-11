@@ -249,7 +249,10 @@ struct FunctionDef {
 
 struct StructDef {
     std::unordered_map<std::string, FunctionDef> methods;
+    std::vector<std::pair<std::string, const ASTNode*>> fields;
 };
+
+std::string executableDir;
 
 struct ReturnSignal {
     Value value;
@@ -469,9 +472,14 @@ Value evaluate(const ASTNode* node) {
                 auto& data = container.asMap("map index")->data;
                 auto it = data.find(key);
                 if (it == data.end()) {
-                    throw std::runtime_error("Key not found in map");
+                    return Value(static_cast<std::int64_t>(0));
                 }
                 return it->second;
+            }
+            if (container.isSet()) {
+                HashKey key = toHashKey(indexVal, "set index");
+                auto& data = container.asSet("set index")->data;
+                return Value(static_cast<std::int64_t>(data.find(key) != data.end()));
             }
             std::int64_t index = indexVal.asInt("Index operator");
             if (index < 0) {
@@ -609,18 +617,23 @@ Value evaluate(const ASTNode* node) {
                 return value;
             }
             if (node->left->type == NodeType::INDEX) {
-                // Check if target is a map — handle map key assignment directly
-                if (node->left->left->type == NodeType::IDENT) {
-                    Value* base = findVariable(node->left->left->name);
-                    if (base == nullptr) {
-                        throw std::runtime_error("Undefined variable: " + node->left->left->name);
+                // Check if target is a map or set (shared_ptr makes evaluate work)
+                Value container = evaluate(node->left->left);
+                if (container.isMap()) {
+                    Value keyVal = evaluate(node->left->right);
+                    HashKey key = toHashKey(keyVal, "map index assignment");
+                    container.asMap("map index assignment")->data[key] = value;
+                    return value;
+                }
+                if (container.isSet()) {
+                    Value keyVal = evaluate(node->left->right);
+                    HashKey key = toHashKey(keyVal, "set index assignment");
+                    if (value.truthy()) {
+                        container.asSet("set index assignment")->data.insert(key);
+                    } else {
+                        container.asSet("set index assignment")->data.erase(key);
                     }
-                    if (base->isMap()) {
-                        Value keyVal = evaluate(node->left->right);
-                        HashKey key = toHashKey(keyVal, "map index assignment");
-                        base->asMap("map index assignment")->data[key] = value;
-                        return value;
-                    }
+                    return value;
                 }
 
                 std::function<Value&(const ASTNode*)> resolveIndexTarget = [&](const ASTNode* indexNode) -> Value& {
@@ -828,8 +841,12 @@ Value evaluate(const ASTNode* node) {
         case NodeType::STRUCT_DEF: {
             StructDef def;
             for (const auto* child : node->children) {
+                if (child->type == NodeType::ASSIGN && child->left && child->left->type == NodeType::IDENT) {
+                    def.fields.push_back({child->left->name, child->right});
+                    continue;
+                }
                 if (child->type != NodeType::FUNCTION_DEF || child->children.empty()) {
-                    throw std::runtime_error("Struct methods must be function definitions");
+                    throw std::runtime_error("Struct body must contain field or function definitions");
                 }
                 std::vector<std::string> params;
                 for (size_t i = 0; i + 1 < child->children.size(); ++i) {
@@ -1006,6 +1023,9 @@ Value evaluate(const ASTNode* node) {
                 }
                 ObjectPtr obj = std::make_shared<ObjectData>();
                 obj->typeName = node->name;
+                for (const auto& field : itStruct->second.fields) {
+                    obj->fields[field.first] = evaluate(field.second);
+                }
                 Value objVal(obj);
                 auto itInit = itStruct->second.methods.find("init");
                 if (itInit != itStruct->second.methods.end()) {
@@ -1259,8 +1279,6 @@ std::string loadStdlibSource() {
     if (std::getenv("ZENPP_NO_STDLIB") != nullptr) {
         return "";
     }
-    std::stringstream buffer;
-    std::ifstream manifest("stdlib/manifest.txt");
     auto trim = [](std::string& s) {
         size_t start = s.find_first_not_of(" \t\r\n");
         size_t end = s.find_last_not_of(" \t\r\n");
@@ -1270,28 +1288,35 @@ std::string loadStdlibSource() {
         }
         s = s.substr(start, end - start + 1);
     };
-    if (manifest) {
+
+    std::vector<std::string> searchDirs;
+    if (std::getenv("ZENPP_STDLIB") != nullptr) {
+        searchDirs.push_back(std::getenv("ZENPP_STDLIB"));
+    }
+    searchDirs.push_back("stdlib");
+    if (!executableDir.empty()) {
+        searchDirs.push_back(executableDir + "/stdlib");
+        searchDirs.push_back(executableDir + "/../lib/zenpp/stdlib");
+    }
+    searchDirs.push_back("/usr/local/lib/zenpp/stdlib");
+
+    for (const auto& dir : searchDirs) {
+        std::ifstream manifest(dir + "/manifest.txt");
+        if (!manifest) continue;
+        std::stringstream buffer;
         std::string line;
         while (std::getline(manifest, line)) {
             trim(line);
-            if (line.empty() || line[0] == '#') {
-                continue;
-            }
-            std::ifstream part("stdlib/" + line);
-            if (!part) {
-                continue;
-            }
+            if (line.empty() || line[0] == '#') continue;
+            std::ifstream part(dir + "/" + line);
+            if (!part) continue;
             buffer << part.rdbuf() << "\n";
         }
-        return buffer.str();
+        std::string result = buffer.str();
+        if (!result.empty()) return result;
     }
 
-    std::ifstream prelude("stdlib/prelude.zpp");
-    if (!prelude) {
-        return "";
-    }
-    buffer << prelude.rdbuf();
-    return buffer.str();
+    return "";
 }
 
 #ifdef __EMSCRIPTEN__
@@ -1373,6 +1398,10 @@ int runRepl() {
 // CLI: `./zenpp` => REPL, `./zenpp <file>` => run file
 #ifndef __EMSCRIPTEN__
 int main(int argc, char* argv[]){
+    std::string argv0 = argv[0];
+    size_t lastSlash = argv0.find_last_of("/\\");
+    executableDir = (lastSlash != std::string::npos) ? argv0.substr(0, lastSlash) : ".";
+
     if (argc == 1) {
         return runRepl();
     }

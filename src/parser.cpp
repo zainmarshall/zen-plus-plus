@@ -148,10 +148,20 @@ ASTNode* Parser::parseStructDefinition() {
         if (currentToken().type == TokenType::END) {
             throw std::runtime_error("Unexpected end of input in struct body");
         }
-        if (currentToken().type != TokenType::FN) {
-            throw std::runtime_error("Struct body can only contain function definitions");
+        if (currentToken().type == TokenType::FN) {
+            methods.push_back(parseFunctionDefinition());
+        } else if (currentToken().type == TokenType::IDENTIFIER) {
+            std::string fieldName = currentToken().name;
+            advance();
+            if (currentToken().type != TokenType::ASSIGN) {
+                throw std::runtime_error("Expected '=' after field name in struct body");
+            }
+            advance();
+            ASTNode* defaultValue = parseLogicalOr();
+            methods.push_back(new ASTNode(NodeType::ASSIGN, new ASTNode(fieldName), defaultValue));
+        } else {
+            throw std::runtime_error("Struct body must contain field or function definitions");
         }
-        methods.push_back(parseFunctionDefinition());
     }
     advance(); // consume }
     return new ASTNode(NodeType::STRUCT_DEF, name, methods);

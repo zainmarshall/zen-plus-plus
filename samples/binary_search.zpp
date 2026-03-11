@@ -1,0 +1,20 @@
+// Binary search on a sorted array
+fn binary_search(v, target) {
+    lo = 0
+    hi = len(v) - 1
+    while lo <= hi {
+        mid = (lo + hi) / 2
+        if v[mid] == target {
+            return mid
+        } else if v[mid] < target {
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    return -1
+}
+
+arr = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]
+print(binary_search(arr, 23))    // 5
+print(binary_search(arr, 10))    // -1

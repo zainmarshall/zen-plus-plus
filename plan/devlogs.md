@@ -183,3 +183,50 @@ I compiled the C++ Interpreter over to Web Assembly so I could make a web interp
 - [move webs to docs](https://github.com/zainmarshall/zen-plus-plus/commit/6875f9a)
 - [web view](https://github.com/zainmarshall/zen-plus-plus/commit/2473e45)
 - [Structs + StdLib + Web](https://github.com/zainmarshall/zen-plus-plus/commit/002f27a)
+
+## Zen++ Devlog IX — v1 Polish
+Big batch of changes getting ready for v1. A mix of language features, website fixes, tooling, and docs cleanup.
+
+### What Changed
+
+1. Map/Set bracket indexing
+   - Maps now support `m[key]` for reading and `m[key] = val` for writing, like C++.
+   - Works on member maps too (`obj.data[key] = val`).
+   - Sets support `s[key]` to check membership (returns 1 or 0).
+   - `.get()`, `.set()`, `.has()`, `.add()` all still work alongside `[]`.
+
+2. Struct field definitions
+   - Structs can now declare fields with default values directly in the body:
+     ```
+     struct Point {
+         x = 0
+         y = 0
+         fn init(a, b) { self.x = a  self.y = b }
+     }
+     ```
+   - Defaults are applied when the struct is constructed, before `init()` runs.
+
+3. Break, continue, for-each
+   - Added `break` and `continue` for loops.
+   - Added for-each syntax: `for x in collection { }` to iterate over vectors, maps, and sets.
+
+4. Website: fixed intellisense
+   - Added better intellisnse and removed filler words
+
+5. Website: docs button
+   - Added a "Docs" link in the toolbar of website
+
+6. Packaging / install script
+   - Added `install.sh`
+
+7. VSCode extension
+   - Built and packaged a VS Code extension (`zenpp-0.0.1.vsix`) with TextMate grammar for syntax highlighting and language configuration.
+   - Published it to VSCode Extnsion Marketplace
+
+8. Docs polish
+   - Fixed some errors in the docs
+
+## Attachments
+1. A screenshot of the extnension in the VSCode Marketplace (so cool!!!)
+2. A screenshot of intellsense in the web interpreter 
+3. Here is the link to the documentation: 

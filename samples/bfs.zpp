@@ -1,0 +1,36 @@
+// BFS traversal of an undirected graph
+import std
+
+n = read()
+adj = []
+for i n {
+    push(adj, [])
+}
+
+m = read()
+for i m {
+    u = read()
+    v = read()
+    push(adj[u], v)
+    push(adj[v], u)
+}
+
+visited = []
+for i n { push(visited, 0) }
+visited[0] = 1
+
+q = Queue()
+q.init()
+q.push(0)
+
+while q.size() > 0 {
+    node = q.pop()
+    print(node)
+    for j len(adj[node]) {
+        neighbor = adj[node][j]
+        if visited[neighbor] == 0 {
+            visited[neighbor] = 1
+            q.push(neighbor)
+        }
+    }
+}
