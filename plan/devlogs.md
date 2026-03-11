@@ -229,4 +229,4 @@ Big batch of changes getting ready for v1. A mix of language features, website f
 ## Attachments
 1. A screenshot of the extnension in the VSCode Marketplace (so cool!!!)
 2. A screenshot of intellsense in the web interpreter 
-3. Here is the link to the documentation: 
+3. Here is the link to the documentation: https://github.com/zainmarshall/zen-plus-plus/blob/master/docs/language-reference.md
