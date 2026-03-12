@@ -1,4 +1,5 @@
 # Zen++
+<img width="6912" height="3456" alt="Zen++" src="https://github.com/user-attachments/assets/5198415e-4daa-4125-a5fe-1798869a574a" />
 
 A fast, lightweight interpreted language designed for competitive programming.
 
