@@ -121,3 +121,21 @@ println(p.second)
 t = Tuple()
 t.init([1, 2, 3])
 println(t.get(2))
+
+// for-each
+v = [10, 20, 30]
+for x in v {
+    println(x)
+}
+
+// break
+for i 100 {
+    if i == 3 { break }
+    println(i)
+}
+
+// continue
+for i 6 {
+    if i % 2 == 0 { continue }
+    println(i)
+}

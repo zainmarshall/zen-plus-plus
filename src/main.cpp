@@ -20,6 +20,10 @@
 #include "parser.hpp"
 #include "ASTNode.hpp"
 
+// Flow control signals for break/continue in loops
+struct BreakSignal {};
+struct ContinueSignal {};
+
 struct HashKey {
     std::variant<std::int64_t, std::string> data;
 
@@ -800,7 +804,10 @@ Value evaluate(const ASTNode* node) {
             }
             Value result = Value(static_cast<std::int64_t>(0));
             while (evaluate(node->children[0]).truthy()) {
-                result = evaluate(node->children[1]);
+                try {
+                    result = evaluate(node->children[1]);
+                } catch (BreakSignal&) { break; }
+                  catch (ContinueSignal&) { continue; }
             }
             return result;
         }
@@ -834,9 +841,67 @@ Value evaluate(const ASTNode* node) {
             Value result = Value(static_cast<std::int64_t>(0));
             for (std::int64_t i = start; (step > 0) ? (i < end) : (i > end); i += step) {
                 setVariable(varNode->name, Value(i));
-                result = evaluate(body);
+                try {
+                    result = evaluate(body);
+                } catch (BreakSignal&) { break; }
+                  catch (ContinueSignal&) { continue; }
             }
             return result;
+        }
+        case NodeType::FOR_EACH: {
+            if (node->children.size() != 3) {
+                throw std::runtime_error("Malformed for-each node");
+            }
+            const ASTNode* varNode = node->children[0];
+            Value collection = evaluate(node->children[1]);
+            const ASTNode* body = node->children[2];
+            Value result = Value(static_cast<std::int64_t>(0));
+
+            if (collection.isVector()) {
+                const auto& vec = collection.asVector("for-each");
+                for (size_t i = 0; i < vec.size(); ++i) {
+                    setVariable(varNode->name, vec[i]);
+                    try {
+                        result = evaluate(body);
+                    } catch (BreakSignal&) { break; }
+                      catch (ContinueSignal&) { continue; }
+                }
+            } else if (collection.isMap()) {
+                HashMapPtr hm = collection.asMap("for-each");
+                for (auto& [key, val] : hm->data) {
+                    if (std::holds_alternative<std::int64_t>(key.data)) {
+                        setVariable(varNode->name, Value(std::get<std::int64_t>(key.data)));
+                    } else {
+                        setVariable(varNode->name, Value(std::get<std::string>(key.data)));
+                    }
+                    try {
+                        result = evaluate(body);
+                    } catch (BreakSignal&) { break; }
+                      catch (ContinueSignal&) { continue; }
+                }
+            } else if (collection.isSet()) {
+                HashSetPtr hs = collection.asSet("for-each");
+                for (auto& key : hs->data) {
+                    if (std::holds_alternative<std::int64_t>(key.data)) {
+                        setVariable(varNode->name, Value(std::get<std::int64_t>(key.data)));
+                    } else {
+                        setVariable(varNode->name, Value(std::get<std::string>(key.data)));
+                    }
+                    try {
+                        result = evaluate(body);
+                    } catch (BreakSignal&) { break; }
+                      catch (ContinueSignal&) { continue; }
+                }
+            } else {
+                throw std::runtime_error("for-each requires a vector, map, or set");
+            }
+            return result;
+        }
+        case NodeType::BREAK: {
+            throw BreakSignal{};
+        }
+        case NodeType::CONTINUE: {
+            throw ContinueSignal{};
         }
         case NodeType::FUNCTION_DEF: {
             if (node->children.empty()) {
@@ -1464,6 +1529,11 @@ int main(int argc, char* argv[]){
         return runRepl();
     }
     if (argc == 2) {
+        std::string arg = argv[1];
+        if (arg == "--version" || arg == "-v") {
+            std::cout << "zenpp 0.1.0\n";
+            return 0;
+        }
         return runFile(argv[1]);
     }
 

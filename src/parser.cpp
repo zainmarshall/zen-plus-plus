@@ -49,6 +49,14 @@ ASTNode* Parser::parseStatment() {
     if(tok.type == TokenType::FOR) {
         return parseForStatement();
     }
+    if (tok.type == TokenType::BREAK) {
+        advance();
+        return new ASTNode(NodeType::BREAK, nullptr, nullptr);
+    }
+    if (tok.type == TokenType::CONTINUE) {
+        advance();
+        return new ASTNode(NodeType::CONTINUE, nullptr, nullptr);
+    }
     if(tok.type == TokenType::IDENTIFIER) {
         if (tok.name == "map" && peekToken().type == TokenType::IDENTIFIER) {
             advance(); // consume 'map'
@@ -251,6 +259,18 @@ ASTNode* Parser::parseForStatement() {
     }
     std::string varName = currentToken().name;
     advance();
+
+    // for x in collection { ... }
+    if (currentToken().type == TokenType::IN) {
+        advance(); // consume in
+        ASTNode* collection = parseLogicalOr();
+        ASTNode* body = parseBlock();
+        std::vector<ASTNode*> children;
+        children.push_back(new ASTNode(varName));
+        children.push_back(collection);
+        children.push_back(body);
+        return new ASTNode(NodeType::FOR_EACH, children);
+    }
 
     std::vector<ASTNode*> parts;
     while (currentToken().type != TokenType::LBRACE) {

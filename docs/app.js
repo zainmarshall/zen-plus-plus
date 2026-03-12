@@ -5,13 +5,14 @@ const outputEl = document.getElementById("stdout");
 const runBtn = document.getElementById("run");
 const clearBtn = document.getElementById("clear");
 const acEl = document.getElementById("autocomplete");
+const lineNumbersEl = document.getElementById("line-numbers");
 
 const defaultProgram = `fn solve() {
     n = read()
     if n % 2 == 0 {
-        print(n ** 2)
+        println(n ** 2)
     } else {
-        print(n)
+        println(n)
     }
 }
 
@@ -44,7 +45,7 @@ function escapeHtml(text) {
 function highlight(text) {
   const escaped = escapeHtml(text);
   const tokenRegex =
-    /\/\/.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set|self)\b|\b(?:read|readInt|readFloat|readLine|len|push|pop|print|min|max|abs|gcd)\b|\b\d+(?:\.\d+)?\b|\*\*|==|!=|<=|>=|&&|\|\||[+*/%<>=^|&!\-]/g;
+    /\/\/.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)\b|\b(?:read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|ord|chr|parseInt)\b|\b\d+(?:\.\d+)?\b|\*\*|==|!=|<=|>=|&&|\|\||[+*/%<>=^|&!\-]/g;
 
   return escaped.replace(tokenRegex, (match) => {
     if (match.startsWith("//") || match.startsWith("/*")) {
@@ -56,14 +57,21 @@ function highlight(text) {
     if (/^\d/.test(match)) {
       return `<span class="token-number">${match}</span>`;
     }
-    if (/^(fn|if|else|while|for|return|true|false|struct|import|map|set|self)$/.test(match)) {
+    if (/^(fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)$/.test(match)) {
       return `<span class="token-keyword">${match}</span>`;
     }
-    if (/^(read|readInt|readFloat|readLine|len|push|pop|print|min|max|abs|gcd)$/.test(match)) {
+    if (/^(read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|ord|chr|parseInt)$/.test(match)) {
       return `<span class="token-builtin">${match}</span>`;
     }
     return `<span class="token-operator">${match}</span>`;
   });
+}
+
+function renderLineNumbers() {
+  const lines = sourceEl.value.split("\n").length;
+  const nums = [];
+  for (let i = 1; i <= lines; i++) nums.push(i);
+  lineNumbersEl.textContent = nums.join("\n");
 }
 
 function renderHighlight() {
@@ -75,6 +83,7 @@ function renderHighlight() {
   }
   highlightEl.scrollTop = sourceEl.scrollTop;
   highlightEl.scrollLeft = sourceEl.scrollLeft;
+  renderLineNumbers();
 }
 
 /* ── Tab key support ─────────────────────────────────── */
@@ -174,8 +183,11 @@ const AC_KEYWORDS = [
   { text: "map", kind: "keyword" },
   { text: "set", kind: "keyword" },
   { text: "self", kind: "keyword" },
+  { text: "break", kind: "keyword" },
+  { text: "continue", kind: "keyword" },
   // Built-in functions
   { text: "print()", kind: "builtin", cursor: -1 },
+  { text: "println()", kind: "builtin", cursor: -1 },
   { text: "read()", kind: "builtin" },
   { text: "readInt()", kind: "builtin" },
   { text: "readFloat()", kind: "builtin" },
@@ -183,6 +195,9 @@ const AC_KEYWORDS = [
   { text: "len()", kind: "builtin", cursor: -1 },
   { text: "push()", kind: "builtin", cursor: -1 },
   { text: "pop()", kind: "builtin", cursor: -1 },
+  { text: "ord()", kind: "builtin", cursor: -1 },
+  { text: "chr()", kind: "builtin", cursor: -1 },
+  { text: "parseInt()", kind: "builtin", cursor: -1 },
   // Stdlib math (import std)
   { text: "min()", kind: "stdlib", cursor: -1 },
   { text: "max()", kind: "stdlib", cursor: -1 },
@@ -193,6 +208,7 @@ const AC_KEYWORDS = [
   { text: "Queue()", kind: "stdlib" },
   { text: "DSU()", kind: "stdlib" },
   { text: "PriorityQueue()", kind: "stdlib" },
+  { text: "MinPriorityQueue()", kind: "stdlib" },
   { text: "Pair()", kind: "stdlib" },
   { text: "Tuple()", kind: "stdlib" },
   // Snippets
@@ -407,6 +423,7 @@ inputEl.addEventListener("input", () => {
 sourceEl.addEventListener("scroll", () => {
   highlightEl.scrollTop = sourceEl.scrollTop;
   highlightEl.scrollLeft = sourceEl.scrollLeft;
+  lineNumbersEl.scrollTop = sourceEl.scrollTop;
 });
 
 renderHighlight();

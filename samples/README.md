@@ -9,6 +9,10 @@ Small Zen++ programs organized by topic.
 - `sieve.zpp`
 - `sieve67.zpp`
 
+## Language Features
+- `foreach_demo.zpp` — for-each loops, break, continue
+- `bracket_indexing.zpp` — map/set bracket syntax, struct field defaults
+
 ## Data Structures
 - `dsu_demo.zpp`
 

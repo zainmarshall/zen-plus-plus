@@ -263,6 +263,27 @@ for i 10 0 -2 {
 }
 ```
 
+### for-each
+
+Iterate over vectors, maps, and sets:
+
+```zenpp
+v = [10, 20, 30]
+for x in v {
+    println(x)        // 10 20 30
+}
+```
+
+### break and continue
+
+```zenpp
+for i 10 {
+    if i == 5 { break }
+    if i % 2 == 0 { continue }
+    println(i)        // 1 3
+}
+```
+
 ## Functions
 
 ### Definition and Calling

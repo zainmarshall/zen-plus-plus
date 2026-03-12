@@ -58,6 +58,11 @@ body {
   text-transform: uppercase;
 }
 
+.toolbar-links {
+  display: flex;
+  gap: 8px;
+}
+
 .docs-btn {
   text-decoration: none;
   font-family: var(--display);
@@ -98,8 +103,6 @@ body {
 
 .panel--code .code-shell {
   flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .panel--io + .panel--io {
@@ -152,6 +155,27 @@ textarea {
 .code-shell {
   position: relative;
   min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.line-numbers {
+  padding: 14px 0 14px 14px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: right;
+  user-select: none;
+  min-width: 36px;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+.code-area {
+  position: relative;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
 }
 

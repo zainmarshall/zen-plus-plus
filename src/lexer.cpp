@@ -159,6 +159,12 @@ std::vector<Token> Lexer::tokenize() {
                 tokens.push_back({TokenType::IMPORT, 0, 0.0, ""});
             } else if (ident == "struct") {
                 tokens.push_back({TokenType::STRUCT, 0, 0.0, ""});
+            } else if (ident == "break") {
+                tokens.push_back({TokenType::BREAK, 0, 0.0, ""});
+            } else if (ident == "continue") {
+                tokens.push_back({TokenType::CONTINUE, 0, 0.0, ""});
+            } else if (ident == "in") {
+                tokens.push_back({TokenType::IN, 0, 0.0, ""});
             } else {
                 tokens.push_back({TokenType::IDENTIFIER, 0, 0.0, ident});
             }

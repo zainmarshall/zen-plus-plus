@@ -236,3 +236,32 @@ Big batch of changes getting ready for v1. A mix of language features, website f
 - [Create zenpp](https://github.com/zainmarshall/zen-plus-plus/commit/e70cf37)
 - [Extension](https://github.com/zainmarshall/zen-plus-plus/commit/5a3cb6d)
 - [Delete docs/README.md](https://github.com/zainmarshall/zen-plus-plus/commit/4039a76)
+
+## Zen++ Devlog X — v0.1.0 Release Prep
+
+Prepping for v0.1.0. Implemented the last missing language features, synced up the website/extension/docs, added a version flag, and just fixed a lot of bugs.
+
+### What Changed
+
+1. **Website updates**
+   - Syntax highlighting and autocomplete now cover all builtins (`println`, `ord`, `chr`, `parseInt`) and new keywords (`break`, `continue`, `in`).
+   - Added line numbers to the code editor.
+   - Grouped toolbar buttons together, default program uses `println`.
+
+2. **VS Code extension v0.1.0**
+   - Updated TextMate grammar with all new builtins and keywords.
+   - Bumped version, updated CHANGELOG, repackaged VSIX.
+
+3. **CLI `--version` flag**
+   - `zenpp --version` now prints `zenpp 0.1.0`.
+
+4. **Docs, samples, tests**
+   - Language reference now documents for-each, break, continue.
+   - New samples: `foreach_demo.zpp`, `bracket_indexing.zpp`.
+   - Added test coverage for new features. All tests passing.
+   - Rebuilt WASM so the web version has everything too.
+
+### Changelog
+- [add image](https://github.com/zainmarshall/zen-plus-plus/commit/983c1d1)
+- [Documentatio](https://github.com/zainmarshall/zen-plus-plus/commit/cb18d1b)
+- [more samples](https://github.com/zainmarshall/zen-plus-plus/commit/b5900d9)

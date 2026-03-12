@@ -12,8 +12,10 @@
 
       <header class="toolbar">
         <span class="logo">Zen++ Interpreter</span>
-        <a href="https://github.com/zainmarshall/zen-plus-plus#installation" target="_blank" class="btn docs-btn">Install Locally</a>
-        <a href="https://github.com/zainmarshall/zen-plus-plus/blob/master/docs/language-reference.md" target="_blank" class="btn docs-btn">Docs</a>
+        <div class="toolbar-links">
+          <a href="https://github.com/zainmarshall/zen-plus-plus#installation" target="_blank" class="btn docs-btn">Install Locally</a>
+          <a href="https://github.com/zainmarshall/zen-plus-plus/blob/master/docs/language-reference.md" target="_blank" class="btn docs-btn">Docs</a>
+        </div>
       </header>
 
       <main class="ide">
@@ -28,9 +30,12 @@
             </button>
           </div>
           <div class="code-shell">
-            <pre id="source-highlight" class="code-highlight"></pre>
-            <textarea id="source" class="code-input" spellcheck="false"></textarea>
-            <div id="autocomplete" class="autocomplete"></div>
+            <div class="line-numbers" id="line-numbers"></div>
+            <div class="code-area">
+              <pre id="source-highlight" class="code-highlight"></pre>
+              <textarea id="source" class="code-input" spellcheck="false"></textarea>
+              <div id="autocomplete" class="autocomplete"></div>
+            </div>
           </div>
         </section>
 

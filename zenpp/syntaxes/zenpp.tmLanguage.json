@@ -41,7 +41,7 @@
     },
     "keywords": {
       "patterns": [
-        { "name": "keyword.control.zenpp", "match": "\\b(if|else|while|for|return|import)\\b" },
+        { "name": "keyword.control.zenpp", "match": "\\b(if|else|while|for|return|import|break|continue|in)\\b" },
         { "name": "keyword.other.zenpp", "match": "\\b(fn|struct|map|set)\\b" },
         { "name": "constant.language.zenpp", "match": "\\b(true|false)\\b" },
         { "name": "variable.language.zenpp", "match": "\\b(self)\\b" }
@@ -49,7 +49,7 @@
     },
     "builtins": {
       "patterns": [
-        { "name": "support.function.zenpp", "match": "\\b(print|read|readInt|readFloat|readLine|len|push|pop|min|max|abs|gcd)\\b" }
+        { "name": "support.function.zenpp", "match": "\\b(print|println|read|readInt|readFloat|readLine|len|push|pop|min|max|abs|gcd|ord|chr|parseInt)\\b" }
       ]
     },
     "operators": {

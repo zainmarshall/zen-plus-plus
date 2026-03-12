@@ -1,0 +1,28 @@
+// For-each loops, break, and continue
+
+// iterate a vector
+fruits = ["apple", "banana", "cherry"]
+for fruit in fruits {
+    println(fruit)
+}
+
+// break out of a loop early
+for i 100 {
+    if i == 5 { break }
+    println(i)
+}
+
+// skip even numbers with continue
+for i 10 {
+    if i % 2 == 0 { continue }
+    println(i)
+}
+
+// for-each over a map
+m = map()
+m["alice"] = 95
+m["bob"] = 87
+m["charlie"] = 92
+for key in m {
+    println(key + ": " + m[key])
+}

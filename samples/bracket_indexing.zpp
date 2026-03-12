@@ -1,0 +1,39 @@
+// Map and set bracket indexing
+
+// map bracket syntax
+freq = map()
+words = ["the", "cat", "sat", "on", "the", "mat", "the"]
+for w in words {
+    freq[w] = freq[w] + 1
+}
+
+println("the: " + freq["the"])
+println("cat: " + freq["cat"])
+println("mat: " + freq["mat"])
+
+// set bracket syntax for membership
+seen = set()
+seen.add(10)
+seen.add(20)
+seen.add(30)
+
+println(seen[10])    // 1
+println(seen[99])    // 0
+
+// struct field defaults
+struct Counter {
+    count = 0
+
+    fn inc() {
+        self.count = self.count + 1
+    }
+    fn get() {
+        return self.count
+    }
+}
+
+c = Counter()
+c.inc()
+c.inc()
+c.inc()
+println(c.get())     // 3
