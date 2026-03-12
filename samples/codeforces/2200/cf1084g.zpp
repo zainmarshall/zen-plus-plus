@@ -38,16 +38,16 @@ fn solve() {
     i = 0
     while i < len(line) {
         // skip spaces
-        while i < len(line) && chr(line[i]) == " " { i++ }
+        while i < len(line) && line[i] == " " { i++ }
         if i >= len(line) { break }
 
-        op = chr(line[i])
+        op = line[i]
         i++
 
         // read the number
         numstr = ""
-        while i < len(line) && chr(line[i]) != " " {
-            numstr = numstr + chr(line[i])
+        while i < len(line) && line[i] != " " {
+            numstr = numstr + line[i]
             i++
         }
         v = parseInt(numstr) % MOD

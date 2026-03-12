@@ -1,8 +1,10 @@
 // Codeforces 2200H - Six Seven
 // Recursive mod-42 grouping
+// Uses global save_stack to work around Zen++ having no function-local scope
 import std
 
 INF = 4000000000000000000
+save_stack = []
 
 fn sort_vec(v) {
     for i 1 len(v) {
@@ -20,44 +22,64 @@ fn f(a) {
     if len(a) == 0 { return 0 }
     if a[len(a) - 1] == 1 { return 5 }
 
-    mod6 = a[0] % 6
-    g0 = []
-    g1 = []
-    g2 = []
-    g3 = []
-    g4 = []
-    g5 = []
-    g6 = []
+    fmod6 = a[0] % 6
+    fg0 = []
+    fg1 = []
+    fg2 = []
+    fg3 = []
+    fg4 = []
+    fg5 = []
+    fg6 = []
 
-    for x in a {
-        if x % 6 != mod6 { return INF }
-        r = (x - mod6) / 6 % 7
-        if r == 0 { push(g0, x) }
-        else if r == 1 { push(g1, x) }
-        else if r == 2 { push(g2, x) }
-        else if r == 3 { push(g3, x) }
-        else if r == 4 { push(g4, x) }
-        else if r == 5 { push(g5, x) }
-        else { push(g6, x) }
+    for xx in a {
+        if xx % 6 != fmod6 { return INF }
+        rr = (xx - fmod6) / 6 % 7
+        if rr == 0 { push(fg0, xx) }
+        else if rr == 1 { push(fg1, xx) }
+        else if rr == 2 { push(fg2, xx) }
+        else if rr == 3 { push(fg3, xx) }
+        else if rr == 4 { push(fg4, xx) }
+        else if rr == 5 { push(fg5, xx) }
+        else { push(fg6, xx) }
     }
 
-    groups = [g0, g1, g2, g3, g4, g5, g6]
+    fgroups = [fg0, fg1, fg2, fg3, fg4, fg5, fg6]
 
-    ans = INF
+    // precompute all next arrays and k values before recursing
+    fall_next = []
+    fall_k = []
     for r 7 {
-        k = (42 - 6 * r - mod6) % 42
-        gr = groups[r]
-        next = []
-        for x in gr {
-            push(next, (x + k) / 42)
+        fk = (42 - 6 * r - fmod6) % 42
+        push(fall_k, fk)
+        fgr = fgroups[r]
+        fnxt = []
+        for yy in fgr {
+            push(fnxt, (yy + fk) / 42)
         }
-        rec = f(next)
+        push(fall_next, fnxt)
+    }
+
+    fans = INF
+    for r 7 {
+        // save state before recursive call
+        push(save_stack, fall_next)
+        push(save_stack, fall_k)
+        push(save_stack, fans)
+
+        fnxt = fall_next[r]
+        rec = f(fnxt)
+
+        // restore state after recursive call
+        fans = pop(save_stack)
+        fall_k = pop(save_stack)
+        fall_next = pop(save_stack)
+
         if rec < INF {
-            val = k + 42 * rec
-            if val < ans { ans = val }
+            fval = fall_k[r] + 42 * rec
+            if fval < fans { fans = fval }
         }
     }
-    return ans
+    return fans
 }
 
 fn solve() {

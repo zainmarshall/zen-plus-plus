@@ -6,6 +6,7 @@ const runBtn = document.getElementById("run");
 const clearBtn = document.getElementById("clear");
 const acEl = document.getElementById("autocomplete");
 const lineNumbersEl = document.getElementById("line-numbers");
+const samplesEl = document.getElementById("samples");
 
 const defaultProgram = `fn solve() {
     n = read()
@@ -424,6 +425,185 @@ sourceEl.addEventListener("scroll", () => {
   highlightEl.scrollTop = sourceEl.scrollTop;
   highlightEl.scrollLeft = sourceEl.scrollLeft;
   lineNumbersEl.scrollTop = sourceEl.scrollTop;
+});
+
+/* ── Sample programs ────────────────────────────────── */
+
+const SAMPLES = [
+  {
+    name: "Fibonacci",
+    code: `// Fibonacci — read t test cases, print fib(n) for each
+fn fib(n) {
+    if n <= 1 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+
+t = read()
+while t-- {
+    println(fib(read()))
+}`,
+    input: `5\n5\n10\n1\n0\n20`,
+  },
+  {
+    name: "Binary Search",
+    code: `// Binary search on a sorted array
+fn binary_search(v, target) {
+    lo = 0
+    hi = len(v) - 1
+    while lo <= hi {
+        mid = (lo + hi) / 2
+        if v[mid] == target {
+            return mid
+        } else if v[mid] < target {
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    return -1
+}
+
+arr = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]
+println(binary_search(arr, 23))
+println(binary_search(arr, 10))`,
+    input: "",
+  },
+  {
+    name: "Sieve of Eratosthenes",
+    code: `// Sieve of Eratosthenes — print all primes up to n
+n = read()
+is_prime = []
+for i n + 1 {
+    push(is_prime, 1)
+}
+is_prime[0] = 0
+is_prime[1] = 0
+
+for i 2 n + 1 {
+    if is_prime[i] {
+        j = i * i
+        while j <= n {
+            is_prime[j] = 0
+            j += i
+        }
+    }
+}
+
+for i 2 n + 1 {
+    if is_prime[i] {
+        println(i)
+    }
+}`,
+    input: "100",
+  },
+  {
+    name: "CF 2200B — Deletion Sort",
+    code: `// Codeforces 2200B - Deletion Sort
+// If already sorted, answer is n; otherwise 1
+
+fn solve() {
+    n = read()
+    a = []
+    for i n { push(a, read()) }
+
+    sorted = 1
+    for i 1 n {
+        if a[i] < a[i - 1] {
+            sorted = 0
+            break
+        }
+    }
+    if sorted { println(n) } else { println(1) }
+}
+
+t = read()
+while t-- { solve() }`,
+    input: `3\n4\n1 4 2 3\n1\n100\n2\n6 7`,
+  },
+  {
+    name: "CF 2200E — Divisive Battle",
+    code: `// Codeforces 2200E - Divisive Battle
+// Check prime structure to determine Alice vs Bob
+
+fn primebase(x) {
+    prime = 0
+    i = 2
+    while i * i <= x {
+        if x % i == 0 {
+            if prime > 0 { return -1 }
+            prime = i
+            while x % i == 0 { x /= i }
+        }
+        i++
+    }
+    if x > 1 {
+        if prime > 0 { return -1 }
+        prime = x
+    }
+    if prime == 0 { return 1 }
+    return prime
+}
+
+fn is_sorted(a) {
+    for i 1 len(a) {
+        if a[i] < a[i - 1] { return 0 }
+    }
+    return 1
+}
+
+fn solve() {
+    n = read()
+    a = []
+    for i n { push(a, read()) }
+
+    b = []
+    for i n { push(b, primebase(a[i])) }
+
+    if is_sorted(a) {
+        println("Bob")
+    } else {
+        has_multi = 0
+        for x in b {
+            if x == -1 {
+                has_multi = 1
+                break
+            }
+        }
+        if has_multi {
+            println("Alice")
+        } else if is_sorted(b) {
+            println("Bob")
+        } else {
+            println("Alice")
+        }
+    }
+}
+
+t = read()
+while t-- { solve() }`,
+    input: `4\n10\n10 9 8 7 6 5 4 3 2 1\n3\n1 8192 677\n2\n6 5\n2\n6 7`,
+  },
+];
+
+// Populate dropdown
+SAMPLES.forEach((s, i) => {
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = s.name;
+  samplesEl.appendChild(opt);
+});
+
+samplesEl.addEventListener("change", () => {
+  const idx = samplesEl.value;
+  if (idx === "") return;
+  const sample = SAMPLES[idx];
+  sourceEl.value = sample.code;
+  inputEl.value = sample.input;
+  localStorage.setItem("zenpp-source", sample.code);
+  localStorage.setItem("zenpp-input", sample.input);
+  renderHighlight();
+  outputEl.textContent = "";
+  samplesEl.value = "";
 });
 
 renderHighlight();

@@ -1402,6 +1402,12 @@ std::string loadStdlibSource() {
     if (std::getenv("ZENPP_NO_STDLIB") != nullptr) {
         return "";
     }
+#ifdef __EMSCRIPTEN__
+    // Embedded stdlib for WebAssembly builds (no filesystem access)
+    return
+#include "stdlib_embed.inc"
+    ;
+#endif
     auto trim = [](std::string& s) {
         size_t start = s.find_first_not_of(" \t\r\n");
         size_t end = s.find_last_not_of(" \t\r\n");

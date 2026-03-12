@@ -1,5 +1,6 @@
 // Codeforces 2200A - Eating Game
 // Simulate circular eating for each starting player, count distinct winners
+import std
 
 fn solve() {
     n = read()
@@ -8,7 +9,6 @@ fn solve() {
 
     winners = set()
     for s n {
-        // copy array
         b = []
         for i n { push(b, a[i]) }
 
@@ -19,8 +19,8 @@ fn solve() {
         cur = s
         while total > 0 {
             if b[cur] > 0 {
-                b[cur]--
-                total--
+                b[cur] = b[cur] - 1
+                total = total - 1
                 last = cur
             }
             cur = (cur + 1) % n
