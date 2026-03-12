@@ -44,28 +44,41 @@ function escapeHtml(text) {
 }
 
 function highlight(text) {
-  const escaped = escapeHtml(text);
+  // Tokenize raw text first, then escape when building HTML.
+  // This avoids the bug where escapeHtml turns > into &gt; and
+  // then the regex breaks the entity by matching & as an operator.
   const tokenRegex =
     /\/\/.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)\b|\b(?:read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|ord|chr|parseInt)\b|\b\d+(?:\.\d+)?\b|\*\*|==|!=|<=|>=|&&|\|\||[+*/%<>=^|&!\-]/g;
 
-  return escaped.replace(tokenRegex, (match) => {
-    if (match.startsWith("//") || match.startsWith("/*")) {
-      return `<span class="token-comment">${match}</span>`;
+  let result = "";
+  let lastIndex = 0;
+  let match;
+
+  while ((match = tokenRegex.exec(text)) !== null) {
+    // Escape plain text between tokens
+    result += escapeHtml(text.slice(lastIndex, match.index));
+
+    const tok = match[0];
+    const esc = escapeHtml(tok);
+    if (tok.startsWith("//") || tok.startsWith("/*")) {
+      result += `<span class="token-comment">${esc}</span>`;
+    } else if (tok.startsWith("\"")) {
+      result += `<span class="token-string">${esc}</span>`;
+    } else if (/^\d/.test(tok)) {
+      result += `<span class="token-number">${esc}</span>`;
+    } else if (/^(fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)$/.test(tok)) {
+      result += `<span class="token-keyword">${esc}</span>`;
+    } else if (/^(read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|ord|chr|parseInt)$/.test(tok)) {
+      result += `<span class="token-builtin">${esc}</span>`;
+    } else {
+      result += `<span class="token-operator">${esc}</span>`;
     }
-    if (match.startsWith("\"")) {
-      return `<span class="token-string">${match}</span>`;
-    }
-    if (/^\d/.test(match)) {
-      return `<span class="token-number">${match}</span>`;
-    }
-    if (/^(fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)$/.test(match)) {
-      return `<span class="token-keyword">${match}</span>`;
-    }
-    if (/^(read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|ord|chr|parseInt)$/.test(match)) {
-      return `<span class="token-builtin">${match}</span>`;
-    }
-    return `<span class="token-operator">${match}</span>`;
-  });
+    lastIndex = tokenRegex.lastIndex;
+  }
+
+  // Escape remaining plain text
+  result += escapeHtml(text.slice(lastIndex));
+  return result;
 }
 
 function renderLineNumbers() {
@@ -442,7 +455,7 @@ t = read()
 while t-- {
     println(fib(read()))
 }`,
-    input: `5\n5\n10\n1\n0\n20`,
+    input: "5\n5\n10\n1\n0\n20",
   },
   {
     name: "Binary Search",
@@ -497,6 +510,190 @@ for i 2 n + 1 {
     input: "100",
   },
   {
+    name: "For-each & Break/Continue",
+    code: `// For-each loops, break, and continue
+
+// iterate a vector
+fruits = ["apple", "banana", "cherry"]
+for fruit in fruits {
+    println(fruit)
+}
+
+// break out of a loop early
+for i 100 {
+    if i == 5 { break }
+    println(i)
+}
+
+// skip even numbers with continue
+for i 10 {
+    if i % 2 == 0 { continue }
+    println(i)
+}
+
+// for-each over a map
+m = map()
+m["alice"] = 95
+m["bob"] = 87
+m["charlie"] = 92
+for key in m {
+    println(key + ": " + m[key])
+}`,
+    input: "",
+  },
+  {
+    name: "Maps, Sets & Structs",
+    code: `// Map and set bracket indexing
+
+// word frequency with maps
+freq = map()
+words = ["the", "cat", "sat", "on", "the", "mat", "the"]
+for w in words {
+    freq[w] = freq[w] + 1
+}
+
+println("the: " + freq["the"])
+println("cat: " + freq["cat"])
+println("mat: " + freq["mat"])
+
+// set membership
+seen = set()
+seen.add(10)
+seen.add(20)
+seen.add(30)
+
+println(seen[10])    // 1
+println(seen[99])    // 0
+
+// struct with field defaults
+struct Counter {
+    count = 0
+
+    fn inc() {
+        self.count = self.count + 1
+    }
+    fn get() {
+        return self.count
+    }
+}
+
+c = Counter()
+c.inc()
+c.inc()
+c.inc()
+println(c.get())     // 3`,
+    input: "",
+  },
+  {
+    name: "DSU (Union-Find)",
+    code: `// Disjoint Set Union demo
+import std
+
+d = DSU()
+d.init(6)
+
+d.unite(0, 1)
+d.unite(2, 3)
+d.unite(4, 5)
+
+println(d.same(0, 1))   // 1
+println(d.same(0, 2))   // 0
+
+d.unite(1, 3)
+println(d.same(0, 2))   // 1
+println(d.same(0, 4))   // 0`,
+    input: "",
+  },
+  {
+    name: "GCD & Math (stdlib)",
+    code: `// Standard library math functions
+import std
+
+println(gcd(12, 18))     // 6
+println(gcd(100, 75))    // 25
+println(min(3, 7))       // 3
+println(max(3, 7))       // 7
+println(abs(-42))        // 42
+
+// Euclidean algorithm by hand
+fn my_gcd(a, b) {
+    while b != 0 {
+        t = a % b
+        a = b
+        b = t
+    }
+    return a
+}
+
+println(my_gcd(48, 18))  // 6`,
+    input: "",
+  },
+  {
+    name: "Stack & Queue (stdlib)",
+    code: `// Stack and Queue from stdlib
+import std
+
+// Stack: LIFO
+s = Stack()
+s.init()
+s.push(10)
+s.push(20)
+s.push(30)
+println("Stack size: " + s.size())
+println("Top: " + s.peek())
+println("Pop: " + s.pop())
+println("Pop: " + s.pop())
+
+// Queue: FIFO
+q = Queue()
+q.init()
+q.push(1)
+q.push(2)
+q.push(3)
+println("Queue pop: " + q.pop())
+println("Queue pop: " + q.pop())
+println("Queue pop: " + q.pop())`,
+    input: "",
+  },
+  {
+    name: "CF 2200A — Eating Game",
+    code: `// Codeforces 2200A - Eating Game
+// Simulate circular eating for each starting player
+import std
+
+fn solve() {
+    n = read()
+    a = []
+    for i n { push(a, read()) }
+
+    winners = set()
+    for s n {
+        b = []
+        for i n { push(b, a[i]) }
+
+        total = 0
+        for i n { total += b[i] }
+
+        last = 0
+        cur = s
+        while total > 0 {
+            if b[cur] > 0 {
+                b[cur] = b[cur] - 1
+                total = total - 1
+                last = cur
+            }
+            cur = (cur + 1) % n
+        }
+        winners.add(last)
+    }
+    println(winners.size())
+}
+
+t = read()
+while t-- { solve() }`,
+    input: "3\n1\n10\n2\n6 7\n4\n1 4 3 4",
+  },
+  {
     name: "CF 2200B — Deletion Sort",
     code: `// Codeforces 2200B - Deletion Sort
 // If already sorted, answer is n; otherwise 1
@@ -518,7 +715,94 @@ fn solve() {
 
 t = read()
 while t-- { solve() }`,
-    input: `3\n4\n1 4 2 3\n1\n100\n2\n6 7`,
+    input: "3\n4\n1 4 2 3\n1\n100\n2\n6 7",
+  },
+  {
+    name: "CF 2200C — Specialty String",
+    code: `// Codeforces 2200C - Specialty String
+// Stack-based: cancel adjacent equal chars
+import std
+
+fn solve() {
+    n = read()
+    s = readLine()
+
+    st = Stack()
+    st.init()
+    for i len(s) {
+        c = s[i]
+        if st.size() > 0 && c == st.peek() {
+            st.pop()
+        } else {
+            st.push(c)
+        }
+    }
+    if st.size() == 0 { println("YES") } else { println("NO") }
+}
+
+t = read()
+while t-- { solve() }`,
+    input: "6\n1\na\n6\nllmllm\n6\nuwuuwu\n6\nbyebye\n6\noooioi\n12\nsiixxsevvenn",
+  },
+  {
+    name: "CF 2200D — Portal",
+    code: `// Codeforces 2200D - Portal
+// Split array, rotate inner segment, merge back
+
+fn solve() {
+    n = read()
+    x = read()
+    y = read()
+    x--
+    y--
+
+    a = []
+    b = []
+    for i n {
+        j = read()
+        if i <= x || i > y {
+            push(a, j)
+        } else {
+            push(b, j)
+        }
+    }
+
+    if len(b) > 0 {
+        mi = 0
+        for i 1 len(b) {
+            if b[i] < b[mi] { mi = i }
+        }
+        nb = []
+        for i mi len(b) { push(nb, b[i]) }
+        for i mi { push(nb, b[i]) }
+        b = nb
+    }
+
+    m = -1
+    if len(b) > 0 { m = b[0] }
+
+    pos = len(a)
+    for i len(a) {
+        if a[i] >= m {
+            pos = i
+            break
+        }
+    }
+
+    res = []
+    for i pos { push(res, a[i]) }
+    for i len(b) { push(res, b[i]) }
+    for i pos len(a) { push(res, a[i]) }
+    for i len(res) {
+        if i > 0 { print(" ") }
+        print(res[i])
+    }
+    println("")
+}
+
+t = read()
+while t-- { solve() }`,
+    input: "4\n4 0 4\n3 1 4 2\n3 1 2\n3 2 1\n5 1 3\n1 3 5 2 4\n2 0 1\n1 2",
   },
   {
     name: "CF 2200E — Divisive Battle",
@@ -581,16 +865,28 @@ fn solve() {
 
 t = read()
 while t-- { solve() }`,
-    input: `4\n10\n10 9 8 7 6 5 4 3 2 1\n3\n1 8192 677\n2\n6 5\n2\n6 7`,
+    input: "4\n10\n10 9 8 7 6 5 4 3 2 1\n3\n1 8192 677\n2\n6 5\n2\n6 7",
   },
 ];
 
-// Populate dropdown
-SAMPLES.forEach((s, i) => {
-  const opt = document.createElement("option");
-  opt.value = i;
-  opt.textContent = s.name;
-  samplesEl.appendChild(opt);
+// Populate dropdown with groups
+const groups = [
+  { label: "Basics", items: [0, 1, 2] },
+  { label: "Language Features", items: [3, 4] },
+  { label: "Stdlib (import std)", items: [5, 6, 7] },
+  { label: "Codeforces 2200", items: [8, 9, 10, 11, 12] },
+];
+
+groups.forEach((g) => {
+  const optgroup = document.createElement("optgroup");
+  optgroup.label = g.label;
+  g.items.forEach((i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = SAMPLES[i].name;
+    optgroup.appendChild(opt);
+  });
+  samplesEl.appendChild(optgroup);
 });
 
 samplesEl.addEventListener("change", () => {

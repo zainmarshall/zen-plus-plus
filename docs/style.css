@@ -144,9 +144,16 @@ body {
   border-color: var(--muted);
 }
 
-.sample-select option {
+.sample-select option,
+.sample-select optgroup {
   background: var(--surface-2);
   color: var(--text);
+}
+
+.sample-select optgroup {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .sr-only {
