@@ -1,4 +1,4 @@
-// Codeforces 1084H - Six Seven
+// Codeforces 2200H - Six Seven
 // Recursive mod-42 grouping
 import std
 
@@ -21,20 +21,34 @@ fn f(a) {
     if a[len(a) - 1] == 1 { return 5 }
 
     mod6 = a[0] % 6
-    groups = []
-    for i 7 { push(groups, []) }
+    g0 = []
+    g1 = []
+    g2 = []
+    g3 = []
+    g4 = []
+    g5 = []
+    g6 = []
 
     for x in a {
         if x % 6 != mod6 { return INF }
         r = (x - mod6) / 6 % 7
-        push(groups[r], x)
+        if r == 0 { push(g0, x) }
+        else if r == 1 { push(g1, x) }
+        else if r == 2 { push(g2, x) }
+        else if r == 3 { push(g3, x) }
+        else if r == 4 { push(g4, x) }
+        else if r == 5 { push(g5, x) }
+        else { push(g6, x) }
     }
+
+    groups = [g0, g1, g2, g3, g4, g5, g6]
 
     ans = INF
     for r 7 {
         k = (42 - 6 * r - mod6) % 42
+        gr = groups[r]
         next = []
-        for x in groups[r] {
+        for x in gr {
             push(next, (x + k) / 42)
         }
         rec = f(next)

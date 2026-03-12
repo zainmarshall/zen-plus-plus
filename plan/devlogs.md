@@ -262,6 +262,33 @@ Prepping for v0.1.0. Implemented the last missing language features, synced up t
    - Rebuilt WASM so the web version has everything too.
 
 ### Changelog
+- [Syntax Highlighting Fix + Docs](https://github.com/zainmarshall/zen-plus-plus/commit/1c05d9b)
 - [add image](https://github.com/zainmarshall/zen-plus-plus/commit/983c1d1)
 - [Documentatio](https://github.com/zainmarshall/zen-plus-plus/commit/cb18d1b)
 - [more samples](https://github.com/zainmarshall/zen-plus-plus/commit/b5900d9)
+
+## Zen++ v0.1.0 Ship
+
+Zen++ is a fast, lightweight interpreted language designed for competitive programming.
+
+Zen++ features C-style syntax with curly braces, no semicolons, automatic type inference, and a standard library with common data structures out of the box.
+
+**[Try it in your browser](https://zainmarshall.github.io/zen-plus-plus/)**
+
+### What's in v0.1.0
+
+The language has everything you need for competitive programming and then some:
+- Implicit variable declarations, 64-bit integers, floats, strings, booleans
+- Vectors, maps, sets with bracket indexing
+- Structs with fields, methods, and defaults
+- For loops (`for i n`, `for i a b`, `for i a b step`), for-each, while, break, continue
+- Functions with recursion, closures over global scope
+- Standard library: Stack, Queue, DSU, PriorityQueue, min/max/abs/gcd
+- Built-in IO: `read()`, `readInt()`, `readFloat()`, `readLine()`, `print()`, `println()`
+
+It runs three ways:
+1. **CLI interpreter** — `zenpp file.zpp` or just `zenpp` for the REPL
+2. **Browser** — full web IDE at [zainmarshall.github.io/zen-plus-plus](https://zainmarshall.github.io/zen-plus-plus/) with syntax highlighting, autocomplete, and the interpreter compiled to WebAssembly
+3. **VS Code** — syntax highlighting extension on the Marketplace
+
+I also solved a the full Codeforces Round 1084 (Div. 3) with Zen++ to prove it works.
