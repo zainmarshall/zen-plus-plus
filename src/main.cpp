@@ -1951,8 +1951,8 @@ Value evaluate(const ASTNode* node) {
                     throw std::runtime_error("replace() expects 3 arguments (string, old, new)");
                 }
                 std::string s = evaluate(node->children[0]).asString("replace()");
-                const std::string& oldStr = evaluate(node->children[1]).asString("replace()");
-                const std::string& newStr = evaluate(node->children[2]).asString("replace()");
+                std::string oldStr = evaluate(node->children[1]).asString("replace()");
+                std::string newStr = evaluate(node->children[2]).asString("replace()");
                 if (oldStr.empty()) return Value(s);
                 size_t pos = 0;
                 while ((pos = s.find(oldStr, pos)) != std::string::npos) {
@@ -1984,8 +1984,8 @@ Value evaluate(const ASTNode* node) {
                 if (node->children.size() != 2) {
                     throw std::runtime_error("startswith() expects 2 arguments");
                 }
-                const std::string& s = evaluate(node->children[0]).asString("startswith()");
-                const std::string& prefix = evaluate(node->children[1]).asString("startswith()");
+                std::string s = evaluate(node->children[0]).asString("startswith()");
+                std::string prefix = evaluate(node->children[1]).asString("startswith()");
                 return Value(static_cast<std::int64_t>(s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0));
             }
 
@@ -1993,8 +1993,8 @@ Value evaluate(const ASTNode* node) {
                 if (node->children.size() != 2) {
                     throw std::runtime_error("endswith() expects 2 arguments");
                 }
-                const std::string& s = evaluate(node->children[0]).asString("endswith()");
-                const std::string& suffix = evaluate(node->children[1]).asString("endswith()");
+                std::string s = evaluate(node->children[0]).asString("endswith()");
+                std::string suffix = evaluate(node->children[1]).asString("endswith()");
                 return Value(static_cast<std::int64_t>(s.size() >= suffix.size() && s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0));
             }
 
@@ -2013,7 +2013,7 @@ Value evaluate(const ASTNode* node) {
                 if (node->children.size() < 2 || node->children.size() > 3) {
                     throw std::runtime_error("substr() expects 2-3 arguments (string, start[, length])");
                 }
-                const std::string& s = evaluate(node->children[0]).asString("substr()");
+                std::string s = evaluate(node->children[0]).asString("substr()");
                 std::int64_t start = evaluate(node->children[1]).asInt("substr()");
                 if (start < 0) start += static_cast<std::int64_t>(s.size());
                 if (start < 0) start = 0;
@@ -2030,8 +2030,8 @@ Value evaluate(const ASTNode* node) {
                 if (node->children.size() != 2) {
                     throw std::runtime_error("contains() expects 2 arguments");
                 }
-                const std::string& s = evaluate(node->children[0]).asString("contains()");
-                const std::string& sub = evaluate(node->children[1]).asString("contains()");
+                std::string s = evaluate(node->children[0]).asString("contains()");
+                std::string sub = evaluate(node->children[1]).asString("contains()");
                 return Value(static_cast<std::int64_t>(s.find(sub) != std::string::npos));
             }
 
