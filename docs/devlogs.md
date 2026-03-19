@@ -292,3 +292,88 @@ It runs three ways:
 3. **VS Code** — syntax highlighting extension on the Marketplace
 
 I also solved a the full Codeforces Round 1084 (Div. 3) with Zen++ to prove it works.
+
+## Zen++ Devlog XI - Competitive Programming Power-Up
+
+I compared my C++ competitive programming macro/template with Zen++ and realized there were a bunch of things the macro could do that Zen++ couldn't. So I went through and added them. 
+
+### What Changed
+
+1. **Bulk I/O**
+   - `read(n)` reads `n` integers from stdin and returns a vector. No more manual loops to read input.
+   - `read(v)` reads `len(v)` integers directly into an existing vector.
+   - Same for `readFloat(n)` and `readFloat(v)`.
+   - Before: `a = []` then `for i n { push(a, read()) }`. Now: `a = read(n)`. One line.
+
+2. **Type casting**
+   - `str(x)` converts any value (int, float, vector) to a string.
+   - `int(x)` converts a string or float to an integer (truncates floats, parses strings).
+   - `float(x)` converts a string or int to a float.
+   - These replace the old `parseInt()` pattern with cleaner, more general casts.
+
+3. **New stdlib math functions** (`import std`)
+   - `lcm(a, b)` - least common multiple.
+   - `mid(a, b)` - midpoint, equivalent to `(a + b) / 2`.
+   - `ckmin(a, b)` - returns the smaller of two values.
+   - `ckmax(a, b)` - returns the larger of two values.
+   - `prefix(v)` - builds a prefix sum array. Returns array of length `len(v) + 1` where `p[i]` = sum of first `i` elements.
+
+4. **Binary search** (`import std`)
+   - `binarySearch(v, target)` - searches a sorted vector for `target`, returns index or -1.
+
+5. **Dijkstra's algorithm** 
+   - `dijkstra(adj, start)` - runs Dijkstra's shortest path from `start`.
+   - `adj[u]` is a list of `[v, w]` pairs (neighbor, weight).
+   - Returns a distance array. 
+
+
+
+## Zen++ Devlog XII — Language Features & Graph Builtins
+
+Big batch of language features, new builtins, and stdlib additions. The main theme was closing the gap between Zen++ and a C++ competitive programming template.
+
+### What Changed
+
+1. **Ternary operator**
+   - `x = a > b ? a : b` — inline conditionals, nestable.
+   - Added `?` and `:` tokens to lexer, `TERNARY` node type, and right-associative parsing so `a ? b : c ? d : e` works as expected.
+
+2. **Negative indexing**
+   - `v[-1]` for last element, `v[-2]` for second-to-last. Works for vectors and strings, both reading and assignment.
+
+3. **Multiple assignment**
+   - `a, b = 1, 2` assigns multiple variables at once.
+   - `a, b = b, a` swaps values — all RHS values are evaluated before any assignment happens.
+   - `_` discards a value: `_, b = 0, 42`.
+
+4. **`_` in for loops**
+   - `for _ n { }` when you don't need the loop variable. Works in for-each too.
+
+5. **String repeat**
+   - `"ha" * 3` gives `"hahaha"`. Works both ways: `3 * "ha"`.
+
+6. **New builtins**
+   - `split(s, delim)` — split string into vector of strings.
+   - `join(v, delim)` — join vector elements into a string.
+   - `find(v, x)` — first index of `x` in vector or string, -1 if not found.
+   - `count(v, x)` — count occurrences in vector or string.
+   - `swap(v, i, j)` — swap two elements in a vector (supports negative indices).
+   - `fill(n, val)` — create a vector of `n` copies of `val`. Deep-copies vectors so each element is independent.
+
+7. **Graph builtins**
+   - `graph(n)` — create adjacency list with `n` empty vectors.
+   - `graph(n, m)` — read `m` undirected edges (`u v`) from stdin, build adjacency list.
+   - `dgraph(n, m)` — read `m` directed edges.
+   - `wgraph(n, m)` — read `m` undirected weighted edges (`u v w`), stores `[v, w]` pairs.
+   - `dwgraph(n, m)` — read `m` directed weighted edges.
+   - Dijkstra sample went from 8 lines of graph setup to `adj = wgraph(n, m)`.
+
+8. **New stdlib functions** (`import std`)
+   - `sum(v)` — sum a vector.
+   - `lowerBound(v, x)` / `upperBound(v, x)` — binary search returning insertion index in a sorted vector.
+   - `modpow(base, exp, mod)` — modular exponentiation.
+   - `bfs(adj, start)` — BFS shortest paths on unweighted graph, returns distance array.
+
+9. **Internal fix**
+   - `push(v[i], x)` now works — you can push to indexed vectors directly (needed for manual adjacency list building).
+

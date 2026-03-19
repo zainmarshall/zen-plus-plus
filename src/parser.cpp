@@ -72,12 +72,48 @@ ASTNode* Parser::parseStatment() {
             return new ASTNode(NodeType::ASSIGN, new ASTNode(name),
                 new ASTNode(NodeType::FUNCTION_CALL, "set", std::vector<ASTNode*>{}));
         }
+        // Multi-assignment: a, b = 1, 2
+        if (peekToken().type == TokenType::COMMA) {
+            size_t savedPos = pos;
+            std::vector<std::string> names;
+            names.push_back(tok.name);
+            advance(); // consume first ident
+            bool isMultiAssign = true;
+            while (currentToken().type == TokenType::COMMA) {
+                advance(); // consume comma
+                if (currentToken().type != TokenType::IDENTIFIER) {
+                    isMultiAssign = false;
+                    break;
+                }
+                names.push_back(currentToken().name);
+                advance();
+            }
+            if (isMultiAssign && currentToken().type == TokenType::ASSIGN) {
+                advance(); // consume =
+                std::vector<ASTNode*> children;
+                for (const auto& n : names) {
+                    children.push_back(new ASTNode(n));
+                }
+                // parse comma-separated values
+                children.push_back(parseTernary());
+                while (currentToken().type == TokenType::COMMA) {
+                    advance();
+                    children.push_back(parseTernary());
+                }
+                // Store name count in node's value field
+                ASTNode* result = new ASTNode(NodeType::MULTI_ASSIGN, children);
+                result->value = static_cast<std::int64_t>(names.size());
+                return result;
+            }
+            pos = savedPos;
+        }
+
         size_t startPos = pos;
         ASTNode* lhs = parsePostfix();
         if (currentToken().type == TokenType::ASSIGN &&
             (lhs->type == NodeType::IDENT || lhs->type == NodeType::INDEX || lhs->type == NodeType::MEMBER)) {
             advance();
-            ASTNode* exprNode = parseLogicalOr();
+            ASTNode* exprNode = parseTernary();
             return new ASTNode(NodeType::ASSIGN, lhs, exprNode);
         }
         pos = startPos;
@@ -121,12 +157,12 @@ ASTNode* Parser::parseStatment() {
             return new ASTNode(NodeType::ASSIGN, new ASTNode(varName), rhs);
         }
     }
-    return parseLogicalOr();
+    return parseTernary();
 }
 
 ASTNode* Parser::parseReturnStatement() {
     advance(); // consume return
-    ASTNode* value = parseLogicalOr();
+    ASTNode* value = parseTernary();
     return new ASTNode(NodeType::RETURN, value, nullptr);
 }
 
@@ -165,7 +201,7 @@ ASTNode* Parser::parseStructDefinition() {
                 throw std::runtime_error("Expected '=' after field name in struct body");
             }
             advance();
-            ASTNode* defaultValue = parseLogicalOr();
+            ASTNode* defaultValue = parseTernary();
             methods.push_back(new ASTNode(NodeType::ASSIGN, new ASTNode(fieldName), defaultValue));
         } else {
             throw std::runtime_error("Struct body must contain field or function definitions");
@@ -217,7 +253,7 @@ ASTNode* Parser::parseFunctionDefinition() {
 
 ASTNode* Parser::parseIfStatement() {
     advance(); // consume if
-    ASTNode* condition = parseLogicalOr();
+    ASTNode* condition = parseTernary();
     ASTNode* thenBlock = parseBlock();
 
     std::vector<ASTNode*> children;
@@ -228,7 +264,7 @@ ASTNode* Parser::parseIfStatement() {
         advance(); // consume else
         if (currentToken().type == TokenType::IF) {
             advance(); // consume if
-            ASTNode* elseIfCondition = parseLogicalOr();
+            ASTNode* elseIfCondition = parseTernary();
             ASTNode* elseIfBlock = parseBlock();
             children.push_back(elseIfCondition);
             children.push_back(elseIfBlock);
@@ -244,7 +280,7 @@ ASTNode* Parser::parseIfStatement() {
 
 ASTNode* Parser::parseWhileStatement() {
     advance(); // consume while
-    ASTNode* condition = parseLogicalOr();
+    ASTNode* condition = parseTernary();
     ASTNode* body = parseBlock();
     std::vector<ASTNode*> children;
     children.push_back(condition);
@@ -263,7 +299,7 @@ ASTNode* Parser::parseForStatement() {
     // for x in collection { ... }
     if (currentToken().type == TokenType::IN) {
         advance(); // consume in
-        ASTNode* collection = parseLogicalOr();
+        ASTNode* collection = parseTernary();
         ASTNode* body = parseBlock();
         std::vector<ASTNode*> children;
         children.push_back(new ASTNode(varName));
@@ -280,7 +316,7 @@ ASTNode* Parser::parseForStatement() {
         if (parts.size() >= 3) {
             throw std::runtime_error("For loop accepts at most 3 expressions before block");
         }
-        parts.push_back(parseLogicalOr());
+        parts.push_back(parseTernary());
     }
 
     if (parts.empty()) {
@@ -373,6 +409,22 @@ ASTNode* Parser::parseLogicalOr() {
     return node;
 }
 
+ASTNode* Parser::parseTernary() {
+    ASTNode* cond = parseLogicalOr();
+    if (currentToken().type == TokenType::QUESTION) {
+        advance(); // consume ?
+        ASTNode* thenExpr = parseTernary();
+        if (currentToken().type != TokenType::COLON) {
+            throw std::runtime_error("Expected ':' in ternary expression");
+        }
+        advance(); // consume :
+        ASTNode* elseExpr = parseTernary();
+        std::vector<ASTNode*> children = {cond, thenExpr, elseExpr};
+        return new ASTNode(NodeType::TERNARY, children);
+    }
+    return cond;
+}
+
 ASTNode* Parser::parseBitwiseOr() {
     ASTNode* node = parseBitwiseXor();
     while (currentToken().type == TokenType::BIT_OR) {
@@ -443,7 +495,7 @@ ASTNode* Parser::parsePostfix() {
     while (true) {
         if (currentToken().type == TokenType::LBRACKET) {
             advance();
-            ASTNode* indexExpr = parseLogicalOr();
+            ASTNode* indexExpr = parseTernary();
             if (currentToken().type != TokenType::RBRACKET) {
                 throw std::runtime_error("Expected ']' after index expression");
             }
@@ -463,7 +515,7 @@ ASTNode* Parser::parsePostfix() {
                 std::vector<ASTNode*> args;
                 if (currentToken().type != TokenType::RPAREN) {
                     while (true) {
-                        args.push_back(parseLogicalOr());
+                        args.push_back(parseTernary());
                         if (currentToken().type == TokenType::COMMA) {
                             advance();
                             continue;
@@ -525,7 +577,7 @@ ASTNode* Parser::parseFactor() {
         std::vector<ASTNode*> elements;
         if (currentToken().type != TokenType::RBRACKET) {
             while (true) {
-                elements.push_back(parseLogicalOr());
+                elements.push_back(parseTernary());
                 if (currentToken().type == TokenType::COMMA) {
                     advance();
                     continue;
@@ -546,7 +598,7 @@ ASTNode* Parser::parseFactor() {
             std::vector<ASTNode*> args;
             if (currentToken().type != TokenType::RPAREN) {
                 while (true) {
-                    args.push_back(parseLogicalOr());
+                    args.push_back(parseTernary());
                     if (currentToken().type == TokenType::COMMA) {
                         advance();
                         continue;
@@ -571,7 +623,7 @@ ASTNode* Parser::parseFactor() {
     }
     else if (tok.type == TokenType::LPAREN) {
         advance();
-        node = parseLogicalOr();
+        node = parseTernary();
         if (currentToken().type != TokenType::RPAREN) throw std::runtime_error("Expected ')'");
         advance();
     }else{

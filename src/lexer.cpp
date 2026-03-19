@@ -214,6 +214,8 @@ std::vector<Token> Lexer::tokenize() {
             case ']': tokens.push_back({TokenType::RBRACKET, 0, 0.0, ""}); break;
             case ',': tokens.push_back({TokenType::COMMA, 0, 0.0, ""}); break;
             case '.': tokens.push_back({TokenType::DOT, 0, 0.0, ""}); break;
+            case '?': tokens.push_back({TokenType::QUESTION, 0, 0.0, ""}); break;
+            case ':': tokens.push_back({TokenType::COLON, 0, 0.0, ""}); break;
             default:
                 throw std::runtime_error(std::string("Unexpected character: '") + currentChar() + "'");
         }

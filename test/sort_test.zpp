@@ -1,0 +1,74 @@
+// === sort() basic ===
+v = [5, 3, 1, 4, 2]
+sort(v)
+println(v)
+// expect: [1, 2, 3, 4, 5]
+
+// === sortdec() basic ===
+v2 = [5, 3, 1, 4, 2]
+sortdec(v2)
+println(v2)
+// expect: [5, 4, 3, 2, 1]
+
+// === sort strings ===
+s = ["banana", "apple", "cherry"]
+sort(s)
+println(s)
+// expect: [apple, banana, cherry]
+
+// === sort floats ===
+f = [3.14, 1.41, 2.72]
+sort(f)
+println(f)
+// expect: [1.41, 2.72, 3.14]
+
+// === sort vectors (lexicographic) ===
+pairs = [[3, 1], [1, 3], [2, 2]]
+sort(pairs)
+println(pairs)
+// expect: [[1, 3], [2, 2], [3, 1]]
+
+// === sort with custom comparator ===
+// sort by second element ascending
+fn bySec(a, b) {
+    return a[1] - b[1]
+}
+pairs2 = [[3, 1], [1, 3], [2, 2]]
+sort(pairs2, bySec)
+println(pairs2)
+// expect: [[3, 1], [2, 2], [1, 3]]
+
+// === sort by second element, then first ===
+fn bySecThenFirst(a, b) {
+    if a[1] != b[1] { return a[1] - b[1] }
+    return a[0] - b[0]
+}
+pairs3 = [[2, 1], [1, 1], [3, 2]]
+sort(pairs3, bySecThenFirst)
+println(pairs3)
+// expect: [[1, 1], [2, 1], [3, 2]]
+
+// === reverse ===
+r = [1, 2, 3, 4, 5]
+reverse(r)
+println(r)
+// expect: [5, 4, 3, 2, 1]
+
+// === reverse strings ===
+rs = ["a", "b", "c"]
+reverse(rs)
+println(rs)
+// expect: [c, b, a]
+
+// === edge cases ===
+empty = []
+sort(empty)
+println(empty)
+// expect: []
+
+single = [42]
+sort(single)
+println(single)
+// expect: [42]
+
+println("all sort tests passed")

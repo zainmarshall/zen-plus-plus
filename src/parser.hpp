@@ -25,6 +25,7 @@ private:
     ASTNode* parseWhileStatement();
     ASTNode* parseForStatement();
     ASTNode* parseBlock();
+    ASTNode* parseTernary();
     ASTNode* parseLogicalOr();
     ASTNode* parseLogicalAnd();
     ASTNode* parseBitwiseOr();

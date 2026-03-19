@@ -1,0 +1,7 @@
+// Dijkstra's shortest path demo
+import std
+
+n, m = read(), read()
+adj = wgraph(n, m)
+dist = dijkstra(adj, 0)
+println(dist)

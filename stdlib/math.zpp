@@ -25,3 +25,143 @@ fn gcd(a, b) {
     }
     return a
 }
+
+fn lcm(a, b) {
+    return a / gcd(a, b) * b
+}
+
+fn mid(a, b) {
+    return (a + b) / 2
+}
+
+fn ckmin(a, b) {
+    if b < a { return b }
+    return a
+}
+
+fn ckmax(a, b) {
+    if b > a { return b }
+    return a
+}
+
+fn prefix(v) {
+    p = [0]
+    for i len(v) {
+        push(p, p[i] + v[i])
+    }
+    return p
+}
+
+fn sum(v) {
+    s = 0
+    for x in v { s += x }
+    return s
+}
+
+fn lowerBound(v, target) {
+    lo = 0
+    hi = len(v)
+    while lo < hi {
+        m = (lo + hi) / 2
+        if v[m] < target { lo = m + 1 }
+        else { hi = m }
+    }
+    return lo
+}
+
+fn upperBound(v, target) {
+    lo = 0
+    hi = len(v)
+    while lo < hi {
+        m = (lo + hi) / 2
+        if v[m] <= target { lo = m + 1 }
+        else { hi = m }
+    }
+    return lo
+}
+
+fn binarySearch(v, target) {
+    lo = 0
+    hi = len(v) - 1
+    while lo <= hi {
+        m = (lo + hi) / 2
+        if v[m] == target {
+            return m
+        } else if v[m] < target {
+            lo = m + 1
+        } else {
+            hi = m - 1
+        }
+    }
+    return -1
+}
+
+// dijkstra(adj, start) — shortest paths from start
+// adj[u] = [[v, w], [v2, w2], ...] adjacency list with weights
+// returns dist[] array where dist[v] = shortest distance from start to v
+fn dijkstra(adj, start) {
+    n = len(adj)
+    INF = 1000000000000000007
+    MAXN = 1000001
+    dist = fill(n, INF)
+    dist[start] = 0
+    pq = MinPriorityQueue()
+    pq.init()
+    // encode (dist, node) as dist * MAXN + node so min-heap orders by dist
+    pq.push(start)
+    while pq.size() > 0 {
+        top = pq.pop()
+        d = top / MAXN
+        u = top % MAXN
+        if d > dist[u] { continue }
+        edges = adj[u]
+        for i len(edges) {
+            e = edges[i]
+            v = e[0]
+            w = e[1]
+            nd = dist[u] + w
+            if nd < dist[v] {
+                dist[v] = nd
+                pq.push(nd * MAXN + v)
+            }
+        }
+    }
+    return dist
+}
+
+fn modpow(base, exp, mod) {
+    result = 1
+    base = base % mod
+    while exp > 0 {
+        if exp % 2 == 1 {
+            result = result * base % mod
+        }
+        exp = exp / 2
+        base = base * base % mod
+    }
+    return result
+}
+
+// bfs(adj, start) — shortest unweighted paths from start
+// adj[u] = [v1, v2, ...] adjacency list (no weights)
+// returns dist[] array where dist[v] = shortest distance, -1 if unreachable
+fn bfs(adj, start) {
+    n = len(adj)
+    dist = fill(n, -1)
+    dist[start] = 0
+    q = Queue()
+    q.init()
+    q.push(start)
+    while q.size() > 0 {
+        u = q.pop()
+        neighbors = adj[u]
+        for i len(neighbors) {
+            v = neighbors[i]
+            if dist[v] == -1 {
+                dist[v] = dist[u] + 1
+                q.push(v)
+            }
+        }
+    }
+    return dist
+}

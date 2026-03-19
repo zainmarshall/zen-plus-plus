@@ -1,0 +1,15 @@
+// Prefix sum — answer range sum queries in O(1)
+import std
+
+n = read()
+q = read()
+a = read(n)
+
+p = prefix(a)
+
+// answer q range sum queries [l, r]
+for i q {
+    l = read()
+    r = read()
+    println(p[r + 1] - p[l])
+}

@@ -1,0 +1,17 @@
+// Bulk I/O and type casting demo
+// read(n) reads n values into a vector at once
+
+n = read()
+v = read(n)
+println(v)
+
+// type casting
+x = 42
+println(str(x) + " is a string now")
+
+s = "123"
+println(int(s) + 1)
+
+f = 3.7
+println(int(f))
+println(float(10) + 0.5)

@@ -104,6 +104,15 @@ Created on first assignment. No type declarations. Function-scoped within functi
 ```zenpp
 x = 10
 x = "now a string"   // reassignment with different type is fine
+
+// multiple assignment
+a, b = 1, 2
+
+// swap
+a, b = b, a
+
+// use _ to discard
+_, b = 0, 42
 ```
 
 ## Operators
@@ -123,7 +132,8 @@ x = "now a string"   // reassignment with different type is fine
 | 9 | `\|` | Bitwise OR |
 | 10 | `&&` | Logical AND |
 | 11 | `\|\|` | Logical OR |
-| 12 | `=` `+=` `-=` `*=` `/=` `%=` `**=` `&=` `\|=` `^=` | Assignment |
+| 12 | `? :` | Ternary |
+| 13 | `=` `+=` `-=` `*=` `/=` `%=` `**=` `&=` `\|=` `^=` | Assignment |
 
 ### Arithmetic
 
@@ -221,6 +231,13 @@ if n > 0 {
 
 Any non-zero value is truthy.
 
+### Ternary Operator
+
+```zenpp
+x = n > 0 ? "positive" : "non-positive"
+println(n % 2 == 0 ? "even" : "odd")
+```
+
 ### while
 
 ```zenpp
@@ -260,6 +277,11 @@ for i 2 7 {
 // for variable start end step { body }
 for i 10 0 -2 {
     println(i)        // 10 8 6 4 2
+}
+
+// use _ to discard the loop variable
+for _ 5 {
+    println("hello")
 }
 ```
 
@@ -354,6 +376,8 @@ println(s[0])          // h
 v = [10, 20, 30]
 println(v[0])          // 10
 println(v[2])          // 30
+println(v[-1])         // 30 (negative indexing)
+println(v[-2])         // 20
 v[1] = 99
 println(v)             // [10, 99, 30]
 ```
@@ -551,10 +575,83 @@ import "mylib"       // loads mylib.zpp
 ```zenpp
 import std
 
-println(min(3, 7))     // 3
-println(max(3, 7))     // 7
-println(abs(-5))        // 5
-println(gcd(12, 8))    // 4
+println(min(3, 7))       // 3
+println(max(3, 7))       // 7
+println(abs(-5))          // 5
+println(gcd(12, 8))      // 4
+println(lcm(4, 6))       // 12
+println(mid(4, 10))      // 7
+println(ckmin(5, 3))     // 3
+println(ckmax(2, 8))     // 8
+```
+
+#### Prefix Sums
+
+```zenpp
+import std
+
+a = [1, 2, 3, 4, 5]
+p = prefix(a)            // [0, 1, 3, 6, 10, 15]
+// sum of a[1..3] = p[4] - p[1] = 10 - 1 = 9
+println(p[4] - p[1])     // 9
+```
+
+#### Sum
+
+```zenpp
+import std
+println(sum([1, 2, 3, 4, 5]))   // 15
+```
+
+#### Binary Search
+
+```zenpp
+import std
+
+arr = [2, 5, 8, 12, 16, 23, 38]
+println(binarySearch(arr, 23))   // 5
+println(binarySearch(arr, 10))   // -1
+```
+
+#### Lower Bound / Upper Bound
+
+```zenpp
+import std
+
+v = [1, 3, 3, 3, 5, 7]
+println(lowerBound(v, 3))   // 1 (first index >= 3)
+println(upperBound(v, 3))   // 4 (first index > 3)
+```
+
+#### Modular Exponentiation
+
+```zenpp
+import std
+println(modpow(2, 10, 1000000007))   // 1024
+```
+
+#### Dijkstra (Shortest Paths)
+
+```zenpp
+import std
+
+// wgraph reads weighted edges from stdin
+n, m = read(), read()
+adj = wgraph(n, m)
+dist = dijkstra(adj, 0)
+println(dist)
+```
+
+#### BFS (Unweighted Shortest Paths)
+
+```zenpp
+import std
+
+// graph reads unweighted edges from stdin
+n, m = read(), read()
+adj = graph(n, m)
+dist = bfs(adj, 0)
+println(dist)
 ```
 
 ### Standard Library: Data Structures
@@ -653,12 +750,32 @@ println(t.get(1))       // 99
 | `chr(n)` | Single-character string from ASCII code |
 | `parseInt(s)` | Parse a string as an integer |
 | `read()` | Read an integer from stdin |
+| `read(n)` | Read `n` integers into a new vector |
+| `read(v)` | Read `len(v)` integers into existing vector `v` |
 | `readInt()` | Read an integer (alias for `read`) |
 | `readFloat()` | Read a float from stdin |
+| `readFloat(n)` | Read `n` floats into a new vector |
 | `readLine()` | Read a full line as a string |
 | `len(x)` | Length of a string or vector |
 | `push(v, x)` | Append `x` to vector `v` |
 | `pop(v)` | Remove and return the last element of `v` |
+| `sort(v)` | Sort vector ascending in-place |
+| `sortdec(v)` | Sort vector descending in-place |
+| `reverse(v)` | Reverse vector in-place |
+| `str(x)` | Convert any value to a string |
+| `int(x)` | Convert string or float to integer |
+| `float(x)` | Convert string or integer to float |
+| `split(s, delim)` | Split string by delimiter, returns vector of strings |
+| `join(v, delim)` | Join vector elements into a string with delimiter |
+| `find(v, x)` | First index of `x` in vector or string, -1 if not found |
+| `count(v, x)` | Count occurrences of `x` in vector or string |
+| `swap(v, i, j)` | Swap elements at indices `i` and `j` in vector |
+| `fill(n, val)` | Create a vector of `n` copies of `val` |
+| `graph(n)` | Create adjacency list with `n` empty vectors |
+| `graph(n, m)` | Read `m` undirected edges from stdin, build adjacency list |
+| `dgraph(n, m)` | Read `m` directed edges from stdin |
+| `wgraph(n, m)` | Read `m` undirected weighted edges (`u v w`), stores `[v, w]` |
+| `dwgraph(n, m)` | Read `m` directed weighted edges |
 | `map()` | Create an empty map |
 | `set()` | Create an empty set |
 

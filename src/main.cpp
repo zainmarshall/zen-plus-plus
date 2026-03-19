@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <unordered_set>
 #include <memory>
+#include <algorithm>
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "ASTNode.hpp"
@@ -500,19 +501,18 @@ Value evaluate(const ASTNode* node) {
                 return Value(static_cast<std::int64_t>(data.find(key) != data.end()));
             }
             std::int64_t index = indexVal.asInt("Index operator");
-            if (index < 0) {
-                throw std::runtime_error("Index cannot be negative");
-            }
             if (container.isVector()) {
                 const auto& vec = container.asVector("Index operator");
-                if (static_cast<size_t>(index) >= vec.size()) {
+                if (index < 0) index += static_cast<std::int64_t>(vec.size());
+                if (index < 0 || static_cast<size_t>(index) >= vec.size()) {
                     throw std::runtime_error("Vector index out of bounds");
                 }
                 return vec[static_cast<size_t>(index)];
             }
             if (container.isString()) {
                 const auto& str = container.asString("Index operator");
-                if (static_cast<size_t>(index) >= str.size()) {
+                if (index < 0) index += static_cast<std::int64_t>(str.size());
+                if (index < 0 || static_cast<size_t>(index) >= str.size()) {
                     throw std::runtime_error("String index out of bounds");
                 }
                 return Value(std::string(1, str[static_cast<size_t>(index)]));
@@ -556,7 +556,24 @@ Value evaluate(const ASTNode* node) {
                 }
                 return Value(left.asDouble("Multiplication") * right.asDouble("Multiplication"));
             }
-            throw std::runtime_error("Multiplication expects numeric values");
+            // String repeat: "abc" * 3 or 3 * "abc"
+            if (left.isString() && right.isInt()) {
+                std::int64_t n = right.asInt("String repeat");
+                if (n < 0) throw std::runtime_error("String repeat count cannot be negative");
+                std::string result;
+                const std::string& s = left.asString("String repeat");
+                for (std::int64_t i = 0; i < n; ++i) result += s;
+                return Value(result);
+            }
+            if (left.isInt() && right.isString()) {
+                std::int64_t n = left.asInt("String repeat");
+                if (n < 0) throw std::runtime_error("String repeat count cannot be negative");
+                std::string result;
+                const std::string& s = right.asString("String repeat");
+                for (std::int64_t i = 0; i < n; ++i) result += s;
+                return Value(result);
+            }
+            throw std::runtime_error("Multiplication expects numeric values or string * int");
         }
         case NodeType::DIV: {
             Value left = evaluate(node->left);
@@ -619,6 +636,9 @@ Value evaluate(const ASTNode* node) {
             return Value(result);
         }
         case NodeType::IDENT: {
+            if (node->name == "INF") {
+                return Value(static_cast<std::int64_t>(1000000000000000007LL));
+            }
             return getVariable(node->name);
         }
         case NodeType::ASSIGN: {
@@ -660,9 +680,14 @@ Value evaluate(const ASTNode* node) {
                     }
 
                     std::int64_t index = evaluate(indexNode->right).asInt("Index assignment");
-                    if (index < 0) {
-                        throw std::runtime_error("Index assignment cannot use negative index");
-                    }
+
+                    auto resolveIdx = [](std::int64_t idx, size_t sz) -> size_t {
+                        if (idx < 0) idx += static_cast<std::int64_t>(sz);
+                        if (idx < 0 || static_cast<size_t>(idx) >= sz) {
+                            throw std::runtime_error("Vector index out of bounds");
+                        }
+                        return static_cast<size_t>(idx);
+                    };
 
                     if (indexNode->left->type == NodeType::IDENT) {
                         Value* base = findVariable(indexNode->left->name);
@@ -670,10 +695,7 @@ Value evaluate(const ASTNode* node) {
                             throw std::runtime_error("Undefined variable: " + indexNode->left->name);
                         }
                         std::vector<Value>& vec = base->asVectorRef("Index assignment");
-                        if (static_cast<size_t>(index) >= vec.size()) {
-                            throw std::runtime_error("Vector index out of bounds");
-                        }
-                        return vec[static_cast<size_t>(index)];
+                        return vec[resolveIdx(index, vec.size())];
                     }
 
                     if (indexNode->left->type == NodeType::MEMBER) {
@@ -684,19 +706,13 @@ Value evaluate(const ASTNode* node) {
                             throw std::runtime_error("Undefined member: " + indexNode->left->name);
                         }
                         std::vector<Value>& vec = it->second.asVectorRef("Index assignment");
-                        if (static_cast<size_t>(index) >= vec.size()) {
-                            throw std::runtime_error("Vector index out of bounds");
-                        }
-                        return vec[static_cast<size_t>(index)];
+                        return vec[resolveIdx(index, vec.size())];
                     }
 
                     if (indexNode->left->type == NodeType::INDEX) {
                         Value& parent = resolveIndexTarget(indexNode->left);
                         std::vector<Value>& vec = parent.asVectorRef("Nested index assignment");
-                        if (static_cast<size_t>(index) >= vec.size()) {
-                            throw std::runtime_error("Vector index out of bounds");
-                        }
-                        return vec[static_cast<size_t>(index)];
+                        return vec[resolveIdx(index, vec.size())];
                     }
 
                     throw std::runtime_error("Index assignment target must be a vector variable");
@@ -839,8 +855,9 @@ Value evaluate(const ASTNode* node) {
             }
 
             Value result = Value(static_cast<std::int64_t>(0));
+            bool skipVar = (varNode->name == "_");
             for (std::int64_t i = start; (step > 0) ? (i < end) : (i > end); i += step) {
-                setVariable(varNode->name, Value(i));
+                if (!skipVar) setVariable(varNode->name, Value(i));
                 try {
                     result = evaluate(body);
                 } catch (BreakSignal&) { break; }
@@ -856,11 +873,12 @@ Value evaluate(const ASTNode* node) {
             Value collection = evaluate(node->children[1]);
             const ASTNode* body = node->children[2];
             Value result = Value(static_cast<std::int64_t>(0));
+            bool skipVar = (varNode->name == "_");
 
             if (collection.isVector()) {
                 const auto& vec = collection.asVector("for-each");
                 for (size_t i = 0; i < vec.size(); ++i) {
-                    setVariable(varNode->name, vec[i]);
+                    if (!skipVar) setVariable(varNode->name, vec[i]);
                     try {
                         result = evaluate(body);
                     } catch (BreakSignal&) { break; }
@@ -902,6 +920,35 @@ Value evaluate(const ASTNode* node) {
         }
         case NodeType::CONTINUE: {
             throw ContinueSignal{};
+        }
+        case NodeType::TERNARY: {
+            Value cond = evaluate(node->children[0]);
+            if (cond.truthy()) {
+                return evaluate(node->children[1]);
+            }
+            return evaluate(node->children[2]);
+        }
+        case NodeType::MULTI_ASSIGN: {
+            // children: [name1, name2, ..., nameN, val1, val2, ..., valN]
+            // node->value stores the name count
+            size_t numNames = static_cast<size_t>(node->value);
+            size_t numValues = node->children.size() - numNames;
+            if (numValues != numNames) {
+                throw std::runtime_error("Multi-assignment: expected " + std::to_string(numNames) +
+                    " values, got " + std::to_string(numValues));
+            }
+            // Evaluate all values first (enables a, b = b, a swap)
+            std::vector<Value> values;
+            for (size_t i = numNames; i < node->children.size(); ++i) {
+                values.push_back(evaluate(node->children[i]));
+            }
+            for (size_t i = 0; i < numNames; ++i) {
+                const std::string& name = node->children[i]->name;
+                if (name != "_") {
+                    setVariable(name, values[i]);
+                }
+            }
+            return values.back();
         }
         case NodeType::FUNCTION_DEF: {
             if (node->children.empty()) {
@@ -1144,7 +1191,7 @@ Value evaluate(const ASTNode* node) {
                 if (node->children.size() != 2) {
                     throw std::runtime_error("push() expects 2 arguments");
                 }
-                auto resolveVectorTarget = [&](const ASTNode* targetNode) -> std::vector<Value>& {
+                std::function<std::vector<Value>&(const ASTNode*)> resolveVectorTarget = [&](const ASTNode* targetNode) -> std::vector<Value>& {
                     if (targetNode->type == NodeType::IDENT) {
                         Value* target = findVariable(targetNode->name);
                         if (target == nullptr) {
@@ -1161,7 +1208,39 @@ Value evaluate(const ASTNode* node) {
                         }
                         return it->second.asVectorRef("push");
                     }
-                    throw std::runtime_error("push() first argument must be a vector variable or member");
+                    if (targetNode->type == NodeType::INDEX) {
+                        // resolve the parent container and index into it
+                        std::function<Value&(const ASTNode*)> resolveIndexRef = [&](const ASTNode* idxNode) -> Value& {
+                            std::int64_t index = evaluate(idxNode->right).asInt("push index");
+                            if (index < 0) throw std::runtime_error("push() negative index");
+                            if (idxNode->left->type == NodeType::IDENT) {
+                                Value* base = findVariable(idxNode->left->name);
+                                if (base == nullptr) throw std::runtime_error("Undefined variable: " + idxNode->left->name);
+                                std::vector<Value>& vec = base->asVectorRef("push");
+                                if (static_cast<size_t>(index) >= vec.size()) throw std::runtime_error("push() index out of bounds");
+                                return vec[static_cast<size_t>(index)];
+                            }
+                            if (idxNode->left->type == NodeType::INDEX) {
+                                Value& parent = resolveIndexRef(idxNode->left);
+                                std::vector<Value>& vec = parent.asVectorRef("push");
+                                if (static_cast<size_t>(index) >= vec.size()) throw std::runtime_error("push() index out of bounds");
+                                return vec[static_cast<size_t>(index)];
+                            }
+                            if (idxNode->left->type == NodeType::MEMBER) {
+                                Value base = evaluate(idxNode->left->left);
+                                ObjectPtr obj = base.asObject("push");
+                                auto it = obj->fields.find(idxNode->left->name);
+                                if (it == obj->fields.end()) throw std::runtime_error("Undefined member: " + idxNode->left->name);
+                                std::vector<Value>& vec = it->second.asVectorRef("push");
+                                if (static_cast<size_t>(index) >= vec.size()) throw std::runtime_error("push() index out of bounds");
+                                return vec[static_cast<size_t>(index)];
+                            }
+                            throw std::runtime_error("push() invalid index target");
+                        };
+                        Value& element = resolveIndexRef(targetNode);
+                        return element.asVectorRef("push");
+                    }
+                    throw std::runtime_error("push() first argument must be a vector variable, member, or indexed element");
                 };
                 std::vector<Value>& vec = resolveVectorTarget(node->children[0]);
                 vec.push_back(evaluate(node->children[1]));
@@ -1200,25 +1279,100 @@ Value evaluate(const ASTNode* node) {
                 return out;
             }
 
-            if (node->name == "read") {
-                if (!node->children.empty()) {
-                    throw std::runtime_error("read() expects 0 arguments");
+            if (node->name == "read" || node->name == "readInt") {
+                if (node->children.empty()) {
+                    return Value(readInt());
                 }
-                return Value(readInt());
-            }
-
-            if (node->name == "readInt") {
-                if (!node->children.empty()) {
-                    throw std::runtime_error("readInt() expects 0 arguments");
+                if (node->children.size() == 1) {
+                    Value arg = evaluate(node->children[0]);
+                    if (arg.isInt()) {
+                        // read(n) -> read n integers into a new vector
+                        std::int64_t n = arg.asInt("read()");
+                        if (n < 0) throw std::runtime_error("read() count must be non-negative");
+                        std::vector<Value> result;
+                        result.reserve(n);
+                        for (std::int64_t i = 0; i < n; ++i) {
+                            result.push_back(Value(readInt()));
+                        }
+                        return Value(result);
+                    }
+                    if (arg.isVector()) {
+                        // read(v) -> read len(v) integers into v, return v
+                        auto resolveVecForRead = [&](const ASTNode* targetNode) -> std::vector<Value>& {
+                            if (targetNode->type == NodeType::IDENT) {
+                                Value* target = findVariable(targetNode->name);
+                                if (target == nullptr) {
+                                    throw std::runtime_error("Undefined variable: " + targetNode->name);
+                                }
+                                return target->asVectorRef("read");
+                            }
+                            if (targetNode->type == NodeType::MEMBER) {
+                                Value base = evaluate(targetNode->left);
+                                ObjectPtr obj = base.asObject("read");
+                                auto it = obj->fields.find(targetNode->name);
+                                if (it == obj->fields.end()) {
+                                    throw std::runtime_error("Undefined member: " + targetNode->name);
+                                }
+                                return it->second.asVectorRef("read");
+                            }
+                            throw std::runtime_error("read() vector argument must be a variable or member");
+                        };
+                        std::vector<Value>& vec = resolveVecForRead(node->children[0]);
+                        for (size_t i = 0; i < vec.size(); ++i) {
+                            vec[i] = Value(readInt());
+                        }
+                        return Value(vec);
+                    }
+                    throw std::runtime_error("read() argument must be an integer count or a vector");
                 }
-                return Value(readInt());
+                throw std::runtime_error("read() expects 0 or 1 arguments");
             }
 
             if (node->name == "readFloat") {
-                if (!node->children.empty()) {
-                    throw std::runtime_error("readFloat() expects 0 arguments");
+                if (node->children.empty()) {
+                    return Value(readFloat());
                 }
-                return Value(readFloat());
+                if (node->children.size() == 1) {
+                    Value arg = evaluate(node->children[0]);
+                    if (arg.isInt()) {
+                        std::int64_t n = arg.asInt("readFloat()");
+                        if (n < 0) throw std::runtime_error("readFloat() count must be non-negative");
+                        std::vector<Value> result;
+                        result.reserve(n);
+                        for (std::int64_t i = 0; i < n; ++i) {
+                            result.push_back(Value(readFloat()));
+                        }
+                        return Value(result);
+                    }
+                    if (arg.isVector()) {
+                        auto resolveVecForRead = [&](const ASTNode* targetNode) -> std::vector<Value>& {
+                            if (targetNode->type == NodeType::IDENT) {
+                                Value* target = findVariable(targetNode->name);
+                                if (target == nullptr) {
+                                    throw std::runtime_error("Undefined variable: " + targetNode->name);
+                                }
+                                return target->asVectorRef("readFloat");
+                            }
+                            if (targetNode->type == NodeType::MEMBER) {
+                                Value base = evaluate(targetNode->left);
+                                ObjectPtr obj = base.asObject("readFloat");
+                                auto it = obj->fields.find(targetNode->name);
+                                if (it == obj->fields.end()) {
+                                    throw std::runtime_error("Undefined member: " + targetNode->name);
+                                }
+                                return it->second.asVectorRef("readFloat");
+                            }
+                            throw std::runtime_error("readFloat() vector argument must be a variable or member");
+                        };
+                        std::vector<Value>& vec = resolveVecForRead(node->children[0]);
+                        for (size_t i = 0; i < vec.size(); ++i) {
+                            vec[i] = Value(readFloat());
+                        }
+                        return Value(vec);
+                    }
+                    throw std::runtime_error("readFloat() argument must be an integer count or a vector");
+                }
+                throw std::runtime_error("readFloat() expects 0 or 1 arguments");
             }
 
             if (node->name == "readLine") {
@@ -1273,6 +1427,182 @@ Value evaluate(const ASTNode* node) {
                 return Value(std::string(1, static_cast<char>(code)));
             }
 
+            if (node->name == "sort" || node->name == "sortdec") {
+                if (node->children.size() < 1 || node->children.size() > 2) {
+                    throw std::runtime_error(node->name + "() expects 1 or 2 arguments");
+                }
+                // resolve the vector target in-place (same pattern as push/pop)
+                auto resolveVecTarget = [&](const ASTNode* targetNode) -> std::vector<Value>& {
+                    if (targetNode->type == NodeType::IDENT) {
+                        Value* target = findVariable(targetNode->name);
+                        if (target == nullptr) {
+                            throw std::runtime_error("Undefined variable: " + targetNode->name);
+                        }
+                        return target->asVectorRef(node->name);
+                    }
+                    if (targetNode->type == NodeType::MEMBER) {
+                        Value base = evaluate(targetNode->left);
+                        ObjectPtr obj = base.asObject(node->name);
+                        auto it = obj->fields.find(targetNode->name);
+                        if (it == obj->fields.end()) {
+                            throw std::runtime_error("Undefined member: " + targetNode->name);
+                        }
+                        return it->second.asVectorRef(node->name);
+                    }
+                    throw std::runtime_error(node->name + "() first argument must be a vector variable or member");
+                };
+                std::vector<Value>& vec = resolveVecTarget(node->children[0]);
+
+                // determine comparison function
+                const FunctionDef* userCmp = nullptr;
+                if (node->children.size() == 2) {
+                    // second arg must be a function name
+                    const ASTNode* cmpNode = node->children[1];
+                    if (cmpNode->type != NodeType::IDENT) {
+                        throw std::runtime_error(node->name + "() comparator must be a function name");
+                    }
+                    auto fit = functions.find(cmpNode->name);
+                    if (fit == functions.end()) {
+                        throw std::runtime_error("Undefined comparator function: " + cmpNode->name);
+                    }
+                    if (fit->second.params.size() != 2) {
+                        throw std::runtime_error("Comparator function must take exactly 2 parameters");
+                    }
+                    userCmp = &fit->second;
+                }
+
+                // default comparison: supports int, float, string, vectors (lexicographic)
+                // returns negative if a < b, 0 if equal, positive if a > b
+                std::function<std::int64_t(const Value&, const Value&)> defaultCmp =
+                    [&](const Value& a, const Value& b) -> std::int64_t {
+                    if (a.isNumber() && b.isNumber()) {
+                        double da = a.isFloat() ? std::get<double>(a.data)
+                                                : static_cast<double>(std::get<std::int64_t>(a.data));
+                        double db = b.isFloat() ? std::get<double>(b.data)
+                                                : static_cast<double>(std::get<std::int64_t>(b.data));
+                        if (da < db) return -1;
+                        if (da > db) return 1;
+                        return 0;
+                    }
+                    if (a.isString() && b.isString()) {
+                        int c = std::get<std::string>(a.data).compare(std::get<std::string>(b.data));
+                        if (c < 0) return -1;
+                        if (c > 0) return 1;
+                        return 0;
+                    }
+                    if (a.isVector() && b.isVector()) {
+                        const auto& va = std::get<std::vector<Value>>(a.data);
+                        const auto& vb = std::get<std::vector<Value>>(b.data);
+                        size_t minLen = std::min(va.size(), vb.size());
+                        for (size_t i = 0; i < minLen; i++) {
+                            std::int64_t r = defaultCmp(va[i], vb[i]);
+                            if (r != 0) return r;
+                        }
+                        if (va.size() < vb.size()) return -1;
+                        if (va.size() > vb.size()) return 1;
+                        return 0;
+                    }
+                    throw std::runtime_error("sort(): cannot compare values of different or unsortable types");
+                };
+
+                // call user comparator: returns the int result
+                auto callUserCmp = [&](const Value& a, const Value& b) -> std::int64_t {
+                    scopes.push_back({});
+                    scopes.back()[userCmp->params[0]] = a;
+                    scopes.back()[userCmp->params[1]] = b;
+                    functionCallDepth++;
+                    Value result;
+                    try {
+                        result = evaluate(userCmp->body);
+                        functionCallDepth--;
+                        scopes.pop_back();
+                    } catch (const ReturnSignal& signal) {
+                        functionCallDepth--;
+                        scopes.pop_back();
+                        result = signal.value;
+                    } catch (...) {
+                        functionCallDepth--;
+                        scopes.pop_back();
+                        throw;
+                    }
+                    if (!result.isNumber()) {
+                        throw std::runtime_error("Comparator must return a number");
+                    }
+                    return result.isInt() ? std::get<std::int64_t>(result.data)
+                                          : static_cast<std::int64_t>(std::get<double>(result.data));
+                };
+
+                bool descending = (node->name == "sortdec");
+
+                // comparison wrapper
+                auto compare = [&](const Value& a, const Value& b) -> bool {
+                    std::int64_t r;
+                    if (userCmp) {
+                        r = callUserCmp(a, b);
+                    } else {
+                        r = defaultCmp(a, b);
+                    }
+                    return descending ? (r > 0) : (r < 0);
+                };
+
+                // quicksort implementation
+                std::function<void(std::vector<Value>&, int, int)> quicksort =
+                    [&](std::vector<Value>& arr, int lo, int hi) {
+                    if (lo >= hi) return;
+                    // median-of-three pivot selection
+                    int mid = lo + (hi - lo) / 2;
+                    if (compare(arr[hi], arr[lo])) std::swap(arr[lo], arr[hi]);
+                    if (compare(arr[mid], arr[lo])) std::swap(arr[lo], arr[mid]);
+                    if (compare(arr[hi], arr[mid])) std::swap(arr[mid], arr[hi]);
+                    Value pivot = arr[mid];
+                    std::swap(arr[mid], arr[hi - 1]);
+                    int i = lo, j = hi - 1;
+                    while (true) {
+                        while (compare(arr[++i], pivot)) {}
+                        while (compare(pivot, arr[--j])) {}
+                        if (i >= j) break;
+                        std::swap(arr[i], arr[j]);
+                    }
+                    std::swap(arr[i], arr[hi - 1]);
+                    quicksort(arr, lo, i - 1);
+                    quicksort(arr, i + 1, hi);
+                };
+
+                if (vec.size() > 1) {
+                    quicksort(vec, 0, static_cast<int>(vec.size()) - 1);
+                }
+
+                return Value(static_cast<std::int64_t>(0));
+            }
+
+            if (node->name == "reverse") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("reverse() expects 1 argument");
+                }
+                auto resolveVecTarget = [&](const ASTNode* targetNode) -> std::vector<Value>& {
+                    if (targetNode->type == NodeType::IDENT) {
+                        Value* target = findVariable(targetNode->name);
+                        if (target == nullptr) {
+                            throw std::runtime_error("Undefined variable: " + targetNode->name);
+                        }
+                        return target->asVectorRef("reverse");
+                    }
+                    if (targetNode->type == NodeType::MEMBER) {
+                        Value base = evaluate(targetNode->left);
+                        ObjectPtr obj = base.asObject("reverse");
+                        auto it = obj->fields.find(targetNode->name);
+                        if (it == obj->fields.end()) {
+                            throw std::runtime_error("Undefined member: " + targetNode->name);
+                        }
+                        return it->second.asVectorRef("reverse");
+                    }
+                    throw std::runtime_error("reverse() argument must be a vector variable or member");
+                };
+                std::vector<Value>& vec = resolveVecTarget(node->children[0]);
+                std::reverse(vec.begin(), vec.end());
+                return Value(static_cast<std::int64_t>(0));
+            }
+
             if (node->name == "parseInt") {
                 if (node->children.size() != 1) {
                     throw std::runtime_error("parseInt() expects 1 argument");
@@ -1284,6 +1614,245 @@ Value evaluate(const ASTNode* node) {
                 } catch (...) {
                     throw std::runtime_error("parseInt() failed to parse: " + s);
                 }
+            }
+
+            if (node->name == "str") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("str() expects 1 argument");
+                }
+                Value v = evaluate(node->children[0]);
+                return Value(v.toString());
+            }
+
+            if (node->name == "int") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("int() expects 1 argument");
+                }
+                Value v = evaluate(node->children[0]);
+                if (v.isInt()) return v;
+                if (v.isFloat()) return Value(static_cast<std::int64_t>(std::get<double>(v.data)));
+                if (v.isString()) {
+                    const std::string& s = std::get<std::string>(v.data);
+                    try {
+                        return Value(static_cast<std::int64_t>(std::stoll(s)));
+                    } catch (...) {
+                        throw std::runtime_error("int() failed to parse: " + s);
+                    }
+                }
+                throw std::runtime_error("int() cannot convert this type to integer");
+            }
+
+            if (node->name == "float") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("float() expects 1 argument");
+                }
+                Value v = evaluate(node->children[0]);
+                if (v.isFloat()) return v;
+                if (v.isInt()) return Value(static_cast<double>(std::get<std::int64_t>(v.data)));
+                if (v.isString()) {
+                    const std::string& s = std::get<std::string>(v.data);
+                    try {
+                        return Value(std::stod(s));
+                    } catch (...) {
+                        throw std::runtime_error("float() failed to parse: " + s);
+                    }
+                }
+                throw std::runtime_error("float() cannot convert this type to float");
+            }
+
+            if (node->name == "split") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("split() expects 2 arguments");
+                }
+                Value sv = evaluate(node->children[0]);
+                Value dv = evaluate(node->children[1]);
+                const std::string& s = sv.asString("split()");
+                const std::string& delim = dv.asString("split()");
+                std::vector<Value> parts;
+                if (delim.empty()) {
+                    // split each character
+                    for (char c : s) parts.push_back(Value(std::string(1, c)));
+                } else {
+                    size_t start = 0, end;
+                    while ((end = s.find(delim, start)) != std::string::npos) {
+                        parts.push_back(Value(s.substr(start, end - start)));
+                        start = end + delim.size();
+                    }
+                    parts.push_back(Value(s.substr(start)));
+                }
+                return Value(parts);
+            }
+
+            if (node->name == "join") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("join() expects 2 arguments");
+                }
+                Value vv = evaluate(node->children[0]);
+                Value dv = evaluate(node->children[1]);
+                const auto& vec = vv.asVector("join()");
+                const std::string& delim = dv.asString("join()");
+                std::string result;
+                for (size_t i = 0; i < vec.size(); ++i) {
+                    if (i > 0) result += delim;
+                    result += vec[i].toString();
+                }
+                return Value(result);
+            }
+
+            if (node->name == "find") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("find() expects 2 arguments");
+                }
+                Value container = evaluate(node->children[0]);
+                Value target = evaluate(node->children[1]);
+                if (container.isVector()) {
+                    const auto& vec = container.asVector("find()");
+                    for (size_t i = 0; i < vec.size(); ++i) {
+                        if (vec[i].toString() == target.toString()) {
+                            return Value(static_cast<std::int64_t>(i));
+                        }
+                    }
+                    return Value(static_cast<std::int64_t>(-1));
+                }
+                if (container.isString()) {
+                    const std::string& s = container.asString("find()");
+                    const std::string& t = target.asString("find()");
+                    size_t pos = s.find(t);
+                    if (pos == std::string::npos) return Value(static_cast<std::int64_t>(-1));
+                    return Value(static_cast<std::int64_t>(pos));
+                }
+                throw std::runtime_error("find() expects vector or string as first argument");
+            }
+
+            if (node->name == "count") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("count() expects 2 arguments");
+                }
+                Value container = evaluate(node->children[0]);
+                Value target = evaluate(node->children[1]);
+                if (container.isVector()) {
+                    const auto& vec = container.asVector("count()");
+                    std::int64_t cnt = 0;
+                    std::string ts = target.toString();
+                    for (const auto& v : vec) {
+                        if (v.toString() == ts) cnt++;
+                    }
+                    return Value(cnt);
+                }
+                if (container.isString()) {
+                    const std::string& s = container.asString("count()");
+                    const std::string& t = target.asString("count()");
+                    if (t.empty()) return Value(static_cast<std::int64_t>(0));
+                    std::int64_t cnt = 0;
+                    size_t pos = 0;
+                    while ((pos = s.find(t, pos)) != std::string::npos) {
+                        cnt++;
+                        pos += t.size();
+                    }
+                    return Value(cnt);
+                }
+                throw std::runtime_error("count() expects vector or string as first argument");
+            }
+
+            if (node->name == "swap") {
+                if (node->children.size() != 3) {
+                    throw std::runtime_error("swap() expects 3 arguments (vector, i, j)");
+                }
+                // resolve vector target in-place
+                auto resolveVecForSwap = [&](const ASTNode* targetNode) -> std::vector<Value>& {
+                    if (targetNode->type == NodeType::IDENT) {
+                        Value* target = findVariable(targetNode->name);
+                        if (target == nullptr) throw std::runtime_error("Undefined variable: " + targetNode->name);
+                        return target->asVectorRef("swap");
+                    }
+                    if (targetNode->type == NodeType::MEMBER) {
+                        Value base = evaluate(targetNode->left);
+                        ObjectPtr obj = base.asObject("swap");
+                        auto it = obj->fields.find(targetNode->name);
+                        if (it == obj->fields.end()) throw std::runtime_error("Undefined member: " + targetNode->name);
+                        return it->second.asVectorRef("swap");
+                    }
+                    throw std::runtime_error("swap() first argument must be a vector variable or member");
+                };
+                std::vector<Value>& vec = resolveVecForSwap(node->children[0]);
+                std::int64_t i = evaluate(node->children[1]).asInt("swap()");
+                std::int64_t j = evaluate(node->children[2]).asInt("swap()");
+                if (i < 0) i += static_cast<std::int64_t>(vec.size());
+                if (j < 0) j += static_cast<std::int64_t>(vec.size());
+                if (i < 0 || static_cast<size_t>(i) >= vec.size() || j < 0 || static_cast<size_t>(j) >= vec.size()) {
+                    throw std::runtime_error("swap() index out of bounds");
+                }
+                std::swap(vec[static_cast<size_t>(i)], vec[static_cast<size_t>(j)]);
+                return Value(static_cast<std::int64_t>(0));
+            }
+
+            if (node->name == "fill") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("fill() expects 2 arguments (n, value)");
+                }
+                Value nv = evaluate(node->children[0]);
+                Value val = evaluate(node->children[1]);
+                std::int64_t n = nv.asInt("fill()");
+                if (n < 0) throw std::runtime_error("fill() count cannot be negative");
+                std::vector<Value> result;
+                result.reserve(static_cast<size_t>(n));
+                for (std::int64_t i = 0; i < n; ++i) {
+                    // Deep copy vectors so each element is independent
+                    if (val.isVector()) {
+                        std::vector<Value> copy = val.asVector("fill()");
+                        result.push_back(Value(copy));
+                    } else {
+                        result.push_back(val);
+                    }
+                }
+                return Value(result);
+            }
+
+            // graph(n) — create adjacency list with n empty vectors
+            // graph(n, m) — read m undirected edges (u v) from stdin
+            // dgraph(n, m) — read m directed edges
+            // wgraph(n, m) — read m undirected weighted edges (u v w)
+            // dwgraph(n, m) — read m directed weighted edges
+            if (node->name == "graph" || node->name == "dgraph" ||
+                node->name == "wgraph" || node->name == "dwgraph") {
+                if (node->children.size() < 1 || node->children.size() > 2) {
+                    throw std::runtime_error(node->name + "() expects 1 or 2 arguments");
+                }
+                std::int64_t n = evaluate(node->children[0]).asInt(node->name + "()");
+                if (n < 0) throw std::runtime_error(node->name + "() size cannot be negative");
+
+                // Create n empty vectors
+                std::vector<Value> adj;
+                adj.reserve(static_cast<size_t>(n));
+                for (std::int64_t i = 0; i < n; ++i) {
+                    adj.push_back(Value(std::vector<Value>{}));
+                }
+
+                if (node->children.size() == 2) {
+                    std::int64_t m = evaluate(node->children[1]).asInt(node->name + "()");
+                    bool directed = (node->name == "dgraph" || node->name == "dwgraph");
+                    bool weighted = (node->name == "wgraph" || node->name == "dwgraph");
+
+                    for (std::int64_t e = 0; e < m; ++e) {
+                        std::int64_t u = readInt();
+                        std::int64_t v = readInt();
+                        if (weighted) {
+                            std::int64_t w = readInt();
+                            std::vector<Value> edge = {Value(v), Value(w)};
+                            adj[static_cast<size_t>(u)].asVectorRef(node->name + "()").push_back(Value(edge));
+                            if (!directed) {
+                                std::vector<Value> redge = {Value(u), Value(w)};
+                                adj[static_cast<size_t>(v)].asVectorRef(node->name + "()").push_back(Value(redge));
+                            }
+                        } else {
+                            adj[static_cast<size_t>(u)].asVectorRef(node->name + "()").push_back(Value(v));
+                            if (!directed) {
+                                adj[static_cast<size_t>(v)].asVectorRef(node->name + "()").push_back(Value(u));
+                            }
+                        }
+                    }
+                }
+                return Value(adj);
             }
 
             auto it = functions.find(node->name);

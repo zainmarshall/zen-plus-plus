@@ -48,7 +48,7 @@ function highlight(text) {
   // This avoids the bug where escapeHtml turns > into &gt; and
   // then the regex breaks the entity by matching & as an operator.
   const tokenRegex =
-    /\/\/.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)\b|\b(?:read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|ord|chr|parseInt)\b|\b\d+(?:\.\d+)?\b|\*\*|==|!=|<=|>=|&&|\|\||[+*/%<>=^|&!\-]/g;
+    /\/\/.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)\b|\b(?:read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|lcm|mid|ckmin|ckmax|prefix|binarySearch|dijkstra|ord|chr|parseInt|str|int|float|sort|sortdec|reverse|split|join|find|count|swap|fill|sum|lowerBound|upperBound|modpow|bfs|graph|dgraph|wgraph|dwgraph)\b|\b\d+(?:\.\d+)?\b|\?|:|(\*\*)|==|!=|<=|>=|&&|\|\||[+*/%<>=^|&!\-]/g;
 
   let result = "";
   let lastIndex = 0;
@@ -68,7 +68,7 @@ function highlight(text) {
       result += `<span class="token-number">${esc}</span>`;
     } else if (/^(fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)$/.test(tok)) {
       result += `<span class="token-keyword">${esc}</span>`;
-    } else if (/^(read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|ord|chr|parseInt)$/.test(tok)) {
+    } else if (/^(read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|lcm|mid|ckmin|ckmax|prefix|binarySearch|dijkstra|ord|chr|parseInt|str|int|float|sort|sortdec|reverse|split|join|find|count|swap|fill|sum|lowerBound|upperBound|modpow|bfs|graph|dgraph|wgraph|dwgraph)$/.test(tok)) {
       result += `<span class="token-builtin">${esc}</span>`;
     } else {
       result += `<span class="token-operator">${esc}</span>`;
@@ -212,11 +212,39 @@ const AC_KEYWORDS = [
   { text: "ord()", kind: "builtin", cursor: -1 },
   { text: "chr()", kind: "builtin", cursor: -1 },
   { text: "parseInt()", kind: "builtin", cursor: -1 },
+  { text: "str()", kind: "builtin", cursor: -1 },
+  { text: "int()", kind: "builtin", cursor: -1 },
+  { text: "float()", kind: "builtin", cursor: -1 },
+  { text: "sort()", kind: "builtin", cursor: -1 },
+  { text: "sortdec()", kind: "builtin", cursor: -1 },
+  { text: "reverse()", kind: "builtin", cursor: -1 },
+  { text: "split()", kind: "builtin", cursor: -1 },
+  { text: "join()", kind: "builtin", cursor: -1 },
+  { text: "find()", kind: "builtin", cursor: -1 },
+  { text: "count()", kind: "builtin", cursor: -1 },
+  { text: "swap()", kind: "builtin", cursor: -1 },
+  { text: "fill()", kind: "builtin", cursor: -1 },
+  { text: "graph()", kind: "builtin", cursor: -1 },
+  { text: "dgraph()", kind: "builtin", cursor: -1 },
+  { text: "wgraph()", kind: "builtin", cursor: -1 },
+  { text: "dwgraph()", kind: "builtin", cursor: -1 },
   // Stdlib math (import std)
   { text: "min()", kind: "stdlib", cursor: -1 },
   { text: "max()", kind: "stdlib", cursor: -1 },
   { text: "abs()", kind: "stdlib", cursor: -1 },
   { text: "gcd()", kind: "stdlib", cursor: -1 },
+  { text: "lcm()", kind: "stdlib", cursor: -1 },
+  { text: "mid()", kind: "stdlib", cursor: -1 },
+  { text: "ckmin()", kind: "stdlib", cursor: -1 },
+  { text: "ckmax()", kind: "stdlib", cursor: -1 },
+  { text: "prefix()", kind: "stdlib", cursor: -1 },
+  { text: "binarySearch()", kind: "stdlib", cursor: -1 },
+  { text: "dijkstra()", kind: "stdlib", cursor: -1 },
+  { text: "sum()", kind: "stdlib", cursor: -1 },
+  { text: "lowerBound()", kind: "stdlib", cursor: -1 },
+  { text: "upperBound()", kind: "stdlib", cursor: -1 },
+  { text: "modpow()", kind: "stdlib", cursor: -1 },
+  { text: "bfs()", kind: "stdlib", cursor: -1 },
   // Stdlib data structures (import std)
   { text: "Stack()", kind: "stdlib" },
   { text: "Queue()", kind: "stdlib" },
@@ -867,13 +895,64 @@ t = read()
 while t-- { solve() }`,
     input: "4\n10\n10 9 8 7 6 5 4 3 2 1\n3\n1 8192 677\n2\n6 5\n2\n6 7",
   },
+  {
+    name: "Bulk I/O & Casting",
+    code: `// Bulk I/O and type casting
+// read(n) reads n values into a vector at once
+
+n = read()
+v = read(n)
+println(v)
+
+// type casting
+x = 42
+println(str(x) + " is a string now")
+
+s = "123"
+println(int(s) + 1)
+
+f = 3.7
+println(int(f))
+println(float(10) + 0.5)`,
+    input: "5\n10 20 30 40 50",
+  },
+  {
+    name: "Prefix Sums (stdlib)",
+    code: `// Prefix sum — answer range sum queries in O(1)
+import std
+
+n = read()
+q = read()
+a = read(n)
+
+p = prefix(a)
+
+// answer q range sum queries [l, r]
+for i q {
+    l = read()
+    r = read()
+    println(p[r + 1] - p[l])
+}`,
+    input: "5 3\n1 2 3 4 5\n0 4\n1 3\n2 2",
+  },
+  {
+    name: "Dijkstra (stdlib)",
+    code: `// Dijkstra's shortest path
+import std
+
+n, m = read(), read()
+adj = wgraph(n, m)
+dist = dijkstra(adj, 0)
+println(dist)`,
+    input: "4 5\n0 1 4\n0 2 1\n2 1 2\n1 3 1\n2 3 5",
+  },
 ];
 
 // Populate dropdown with groups
 const groups = [
   { label: "Basics", items: [0, 1, 2] },
-  { label: "Language Features", items: [3, 4] },
-  { label: "Stdlib (import std)", items: [5, 6, 7] },
+  { label: "Language Features", items: [3, 4, 13] },
+  { label: "Stdlib (import std)", items: [5, 6, 7, 14, 15] },
   { label: "Codeforces 2200", items: [8, 9, 10, 11, 12] },
 ];
 
