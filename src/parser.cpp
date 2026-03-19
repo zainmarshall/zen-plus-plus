@@ -146,13 +146,15 @@ ASTNode* Parser::parseStatment() {
             case TokenType::BIT_AND_ASSIGN: opType = NodeType::BIT_AND; break;
             case TokenType::BIT_OR_ASSIGN: opType = NodeType::BIT_OR; break;
             case TokenType::BIT_XOR_ASSIGN: opType = NodeType::BIT_XOR; break;
+            case TokenType::SHIFT_LEFT_ASSIGN: opType = NodeType::BIT_SHIFT_LEFT; break;
+            case TokenType::SHIFT_RIGHT_ASSIGN: opType = NodeType::BIT_SHIFT_RIGHT; break;
             default: isCompound = false; break;
         }
         if (isCompound) {
             std::string varName = tok.name;
             advance();
             advance();
-            ASTNode* exprNode = parseExpr();
+            ASTNode* exprNode = parseTernary();
             ASTNode* rhs = new ASTNode(opType, new ASTNode(varName), exprNode);
             return new ASTNode(NodeType::ASSIGN, new ASTNode(varName), rhs);
         }
@@ -230,8 +232,15 @@ ASTNode* Parser::parseFunctionDefinition() {
             if (currentToken().type != TokenType::IDENTIFIER) {
                 throw std::runtime_error("Expected parameter name");
             }
-            children.push_back(new ASTNode(currentToken().name));
+            std::string paramName = currentToken().name;
             advance();
+            if (currentToken().type == TokenType::ASSIGN) {
+                advance(); // consume =
+                ASTNode* defaultVal = parseTernary();
+                children.push_back(new ASTNode(NodeType::ASSIGN, new ASTNode(paramName), defaultVal));
+            } else {
+                children.push_back(new ASTNode(paramName));
+            }
 
             if (currentToken().type == TokenType::COMMA) {
                 advance();
@@ -296,16 +305,40 @@ ASTNode* Parser::parseForStatement() {
     std::string varName = currentToken().name;
     advance();
 
-    // for x in collection { ... }
+    // Check for tuple unpacking: for x, y in collection { }
+    std::vector<std::string> varNames = {varName};
+    if (currentToken().type == TokenType::COMMA) {
+        size_t savedPos = pos;
+        bool isTupleUnpack = true;
+        while (currentToken().type == TokenType::COMMA) {
+            advance(); // consume comma
+            if (currentToken().type != TokenType::IDENTIFIER) {
+                isTupleUnpack = false;
+                break;
+            }
+            varNames.push_back(currentToken().name);
+            advance();
+        }
+        if (!isTupleUnpack || currentToken().type != TokenType::IN) {
+            pos = savedPos;
+            varNames = {varName};
+        }
+    }
+
+    // for x in collection { ... } OR for x, y in collection { ... }
     if (currentToken().type == TokenType::IN) {
         advance(); // consume in
         ASTNode* collection = parseTernary();
         ASTNode* body = parseBlock();
         std::vector<ASTNode*> children;
-        children.push_back(new ASTNode(varName));
+        for (const auto& n : varNames) {
+            children.push_back(new ASTNode(n));
+        }
         children.push_back(collection);
         children.push_back(body);
-        return new ASTNode(NodeType::FOR_EACH, children);
+        ASTNode* result = new ASTNode(NodeType::FOR_EACH, children);
+        result->value = static_cast<std::int64_t>(varNames.size());
+        return result;
     }
 
     std::vector<ASTNode*> parts;
@@ -367,15 +400,25 @@ ASTNode* Parser::parseBlock() {
     return new ASTNode(NodeType::BLOCK, statements);
 }
 
+ASTNode* Parser::parseShift() {
+    ASTNode* node = parseExpr();
+    while (currentToken().type == TokenType::SHIFT_LEFT || currentToken().type == TokenType::SHIFT_RIGHT) {
+        NodeType nt = (currentToken().type == TokenType::SHIFT_LEFT) ? NodeType::BIT_SHIFT_LEFT : NodeType::BIT_SHIFT_RIGHT;
+        advance();
+        node = new ASTNode(nt, node, parseExpr());
+    }
+    return node;
+}
+
 ASTNode* Parser::parseComparison() {
-    ASTNode* left = parseExpr();
+    ASTNode* left = parseShift();
     Token next = currentToken();
     if(next.type == TokenType::EQUAL || next.type == TokenType::NOT_EQUAL ||
        next.type == TokenType::LESS || next.type == TokenType::GREATER ||
        next.type == TokenType::LESS_EQUAL || next.type == TokenType::GREATER_EQUAL) {
         Token tok = currentToken();
         advance();
-        ASTNode* right = parseExpr();
+        ASTNode* right = parseShift();
         NodeType nodeType;
         switch(tok.type) {
             case TokenType::EQUAL: nodeType = NodeType::EQUALS; break;
@@ -494,13 +537,41 @@ ASTNode* Parser::parsePostfix() {
     ASTNode* node = parseFactor();
     while (true) {
         if (currentToken().type == TokenType::LBRACKET) {
-            advance();
-            ASTNode* indexExpr = parseTernary();
-            if (currentToken().type != TokenType::RBRACKET) {
-                throw std::runtime_error("Expected ']' after index expression");
+            advance(); // consume [
+            // Parse first expression (or detect empty start for slice)
+            ASTNode* startExpr = nullptr;
+            if (currentToken().type != TokenType::COLON && currentToken().type != TokenType::RBRACKET) {
+                startExpr = parseLogicalOr();
             }
-            advance();
-            node = new ASTNode(NodeType::INDEX, node, indexExpr);
+            if (currentToken().type == TokenType::COLON) {
+                // Slice syntax: [start:end] or [start:end:step]
+                advance(); // consume first :
+                ASTNode* endExpr = nullptr;
+                if (currentToken().type != TokenType::RBRACKET && currentToken().type != TokenType::COLON) {
+                    endExpr = parseLogicalOr();
+                }
+                ASTNode* stepExpr = nullptr;
+                if (currentToken().type == TokenType::COLON) {
+                    advance(); // consume second :
+                    if (currentToken().type != TokenType::RBRACKET) {
+                        stepExpr = parseLogicalOr();
+                    }
+                }
+                if (currentToken().type != TokenType::RBRACKET) {
+                    throw std::runtime_error("Expected ']' after slice");
+                }
+                advance();
+                ASTNode* sliceNode = new ASTNode(NodeType::SLICE, node, nullptr);
+                sliceNode->children = {startExpr, endExpr, stepExpr};
+                node = sliceNode;
+            } else {
+                // Regular index
+                if (currentToken().type != TokenType::RBRACKET) {
+                    throw std::runtime_error("Expected ']' after index expression");
+                }
+                advance();
+                node = new ASTNode(NodeType::INDEX, node, startExpr);
+            }
             continue;
         }
         if (currentToken().type == TokenType::DOT) {
@@ -620,6 +691,45 @@ ASTNode* Parser::parseFactor() {
         } else {
             node = new ASTNode(tok.name);
         }
+    }
+    else if (tok.type == TokenType::FN) {
+        // Lambda expression: fn(args) { body }
+        advance(); // consume fn
+        if (currentToken().type != TokenType::LPAREN) {
+            throw std::runtime_error("Expected '(' for lambda expression");
+        }
+        advance(); // consume (
+        std::vector<ASTNode*> children;
+        if (currentToken().type != TokenType::RPAREN) {
+            while (true) {
+                if (currentToken().type != TokenType::IDENTIFIER) {
+                    throw std::runtime_error("Expected parameter name in lambda");
+                }
+                std::string paramName = currentToken().name;
+                advance();
+                if (currentToken().type == TokenType::ASSIGN) {
+                    advance();
+                    ASTNode* defaultVal = parseTernary();
+                    children.push_back(new ASTNode(NodeType::ASSIGN, new ASTNode(paramName), defaultVal));
+                } else {
+                    children.push_back(new ASTNode(paramName));
+                }
+                if (currentToken().type == TokenType::COMMA) {
+                    advance();
+                    continue;
+                }
+                break;
+            }
+        }
+        if (currentToken().type != TokenType::RPAREN) {
+            throw std::runtime_error("Expected ')' after lambda parameters");
+        }
+        advance(); // consume )
+        ASTNode* body = parseBlock();
+        children.push_back(body);
+        static int lambdaCounter = 0;
+        std::string lname = "__lambda_" + std::to_string(lambdaCounter++);
+        node = new ASTNode(NodeType::LAMBDA, lname, children);
     }
     else if (tok.type == TokenType::LPAREN) {
         advance();

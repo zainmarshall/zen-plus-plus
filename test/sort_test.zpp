@@ -60,6 +60,42 @@ reverse(rs)
 println(rs)
 // expect: [c, b, a]
 
+// === sort with inline lambda ===
+nums = [5, 3, 1, 4, 2]
+sort(nums, fn(a, b) { a - b })
+println(nums)
+// expect: [1, 2, 3, 4, 5]
+
+// === sortdec with lambda ===
+nums2 = [5, 3, 1, 4, 2]
+sort(nums2, fn(a, b) { b - a })
+println(nums2)
+// expect: [5, 4, 3, 2, 1]
+
+// === lambda sort by second element ===
+items = [[1, 30], [2, 10], [3, 20]]
+sort(items, fn(a, b) { a[1] - b[1] })
+println(items)
+// expect: [[2, 10], [3, 20], [1, 30]]
+
+// === lambda sort by string length ===
+words = ["banana", "fig", "apple", "kiwi"]
+sort(words, fn(a, b) { len(a) - len(b) })
+println(words)
+// expect: [fig, kiwi, apple, banana]
+
+// === lambda sort by absolute value ===
+vals = [-5, 3, -1, 4, -2]
+sort(vals, fn(a, b) {
+    aa = a
+    bb = b
+    if aa < 0 { aa = -aa }
+    if bb < 0 { bb = -bb }
+    return aa - bb
+})
+println(vals)
+// expect: [-1, -2, 3, 4, -5]
+
 // === edge cases ===
 empty = []
 sort(empty)
@@ -70,5 +106,10 @@ single = [42]
 sort(single)
 println(single)
 // expect: [42]
+
+two = [2, 1]
+sort(two)
+println(two)
+// expect: [1, 2]
 
 println("all sort tests passed")

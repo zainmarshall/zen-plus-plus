@@ -249,6 +249,7 @@ std::string Value::toString() const {
 
 struct FunctionDef {
     std::vector<std::string> params;
+    std::vector<const ASTNode*> defaults; // nullptr for required params
     const ASTNode* body;
 };
 
@@ -618,6 +619,8 @@ Value evaluate(const ASTNode* node) {
         case NodeType::BIT_AND: return Value(evaluate(node->left).asInt("Bitwise AND") & evaluate(node->right).asInt("Bitwise AND"));
         case NodeType::BIT_OR: return Value(evaluate(node->left).asInt("Bitwise OR") | evaluate(node->right).asInt("Bitwise OR"));
         case NodeType::BIT_XOR: return Value(evaluate(node->left).asInt("Bitwise XOR") ^ evaluate(node->right).asInt("Bitwise XOR"));
+        case NodeType::BIT_SHIFT_LEFT: return Value(evaluate(node->left).asInt("Left shift") << evaluate(node->right).asInt("Left shift"));
+        case NodeType::BIT_SHIFT_RIGHT: return Value(evaluate(node->left).asInt("Right shift") >> evaluate(node->right).asInt("Right shift"));
         case NodeType::NEG: {
             Value v = evaluate(node->left);
             if (v.isInt()) return Value(-v.asInt("Unary minus"));
@@ -866,52 +869,104 @@ Value evaluate(const ASTNode* node) {
             return result;
         }
         case NodeType::FOR_EACH: {
-            if (node->children.size() != 3) {
+            size_t numVars = static_cast<size_t>(node->value);
+            if (numVars == 0) numVars = 1; // backward compat
+            size_t collIdx = numVars;
+            size_t bodyIdx = numVars + 1;
+            if (node->children.size() < bodyIdx + 1) {
                 throw std::runtime_error("Malformed for-each node");
             }
-            const ASTNode* varNode = node->children[0];
-            Value collection = evaluate(node->children[1]);
-            const ASTNode* body = node->children[2];
+            Value collection = evaluate(node->children[collIdx]);
+            const ASTNode* body = node->children[bodyIdx];
             Value result = Value(static_cast<std::int64_t>(0));
-            bool skipVar = (varNode->name == "_");
 
-            if (collection.isVector()) {
-                const auto& vec = collection.asVector("for-each");
-                for (size_t i = 0; i < vec.size(); ++i) {
-                    if (!skipVar) setVariable(varNode->name, vec[i]);
-                    try {
-                        result = evaluate(body);
-                    } catch (BreakSignal&) { break; }
-                      catch (ContinueSignal&) { continue; }
-                }
-            } else if (collection.isMap()) {
-                HashMapPtr hm = collection.asMap("for-each");
-                for (auto& [key, val] : hm->data) {
-                    if (std::holds_alternative<std::int64_t>(key.data)) {
-                        setVariable(varNode->name, Value(std::get<std::int64_t>(key.data)));
-                    } else {
-                        setVariable(varNode->name, Value(std::get<std::string>(key.data)));
+            if (numVars == 1) {
+                // Single variable (original behavior)
+                const ASTNode* varNode = node->children[0];
+                bool skipVar = (varNode->name == "_");
+
+                if (collection.isVector()) {
+                    const auto& vec = collection.asVector("for-each");
+                    for (size_t i = 0; i < vec.size(); ++i) {
+                        if (!skipVar) setVariable(varNode->name, vec[i]);
+                        try {
+                            result = evaluate(body);
+                        } catch (BreakSignal&) { break; }
+                          catch (ContinueSignal&) { continue; }
                     }
-                    try {
-                        result = evaluate(body);
-                    } catch (BreakSignal&) { break; }
-                      catch (ContinueSignal&) { continue; }
-                }
-            } else if (collection.isSet()) {
-                HashSetPtr hs = collection.asSet("for-each");
-                for (auto& key : hs->data) {
-                    if (std::holds_alternative<std::int64_t>(key.data)) {
-                        setVariable(varNode->name, Value(std::get<std::int64_t>(key.data)));
-                    } else {
-                        setVariable(varNode->name, Value(std::get<std::string>(key.data)));
+                } else if (collection.isMap()) {
+                    HashMapPtr hm = collection.asMap("for-each");
+                    for (auto& [key, val] : hm->data) {
+                        if (std::holds_alternative<std::int64_t>(key.data)) {
+                            setVariable(varNode->name, Value(std::get<std::int64_t>(key.data)));
+                        } else {
+                            setVariable(varNode->name, Value(std::get<std::string>(key.data)));
+                        }
+                        try {
+                            result = evaluate(body);
+                        } catch (BreakSignal&) { break; }
+                          catch (ContinueSignal&) { continue; }
                     }
-                    try {
-                        result = evaluate(body);
-                    } catch (BreakSignal&) { break; }
-                      catch (ContinueSignal&) { continue; }
+                } else if (collection.isSet()) {
+                    HashSetPtr hs = collection.asSet("for-each");
+                    for (auto& key : hs->data) {
+                        if (std::holds_alternative<std::int64_t>(key.data)) {
+                            setVariable(varNode->name, Value(std::get<std::int64_t>(key.data)));
+                        } else {
+                            setVariable(varNode->name, Value(std::get<std::string>(key.data)));
+                        }
+                        try {
+                            result = evaluate(body);
+                        } catch (BreakSignal&) { break; }
+                          catch (ContinueSignal&) { continue; }
+                    }
+                } else {
+                    throw std::runtime_error("for-each requires a vector, map, or set");
                 }
             } else {
-                throw std::runtime_error("for-each requires a vector, map, or set");
+                // Tuple unpacking
+                if (collection.isVector()) {
+                    const auto& vec = collection.asVector("for-each");
+                    for (size_t i = 0; i < vec.size(); ++i) {
+                        const Value& elem = vec[i];
+                        if (elem.isVector()) {
+                            const auto& inner = elem.asVector("for-each tuple unpack");
+                            for (size_t j = 0; j < numVars; ++j) {
+                                const std::string& vname = node->children[j]->name;
+                                if (vname != "_") {
+                                    setVariable(vname, j < inner.size() ? inner[j] : Value(static_cast<std::int64_t>(0)));
+                                }
+                            }
+                        } else {
+                            throw std::runtime_error("Tuple unpacking requires vector elements");
+                        }
+                        try {
+                            result = evaluate(body);
+                        } catch (BreakSignal&) { break; }
+                          catch (ContinueSignal&) { continue; }
+                    }
+                } else if (collection.isMap()) {
+                    if (numVars != 2) {
+                        throw std::runtime_error("Map unpacking requires exactly 2 variables");
+                    }
+                    HashMapPtr hm = collection.asMap("for-each");
+                    for (auto& [key, val] : hm->data) {
+                        Value keyVal;
+                        if (std::holds_alternative<std::int64_t>(key.data)) {
+                            keyVal = Value(std::get<std::int64_t>(key.data));
+                        } else {
+                            keyVal = Value(std::get<std::string>(key.data));
+                        }
+                        if (node->children[0]->name != "_") setVariable(node->children[0]->name, keyVal);
+                        if (node->children[1]->name != "_") setVariable(node->children[1]->name, val);
+                        try {
+                            result = evaluate(body);
+                        } catch (BreakSignal&) { break; }
+                          catch (ContinueSignal&) { continue; }
+                    }
+                } else {
+                    throw std::runtime_error("Tuple unpacking for-each requires vector or map");
+                }
             }
             return result;
         }
@@ -955,13 +1010,19 @@ Value evaluate(const ASTNode* node) {
                 throw std::runtime_error("Malformed function definition");
             }
             std::vector<std::string> params;
+            std::vector<const ASTNode*> defaults;
             for (size_t i = 0; i + 1 < node->children.size(); ++i) {
-                if (node->children[i]->type != NodeType::IDENT) {
+                if (node->children[i]->type == NodeType::ASSIGN) {
+                    params.push_back(node->children[i]->left->name);
+                    defaults.push_back(node->children[i]->right);
+                } else if (node->children[i]->type == NodeType::IDENT) {
+                    params.push_back(node->children[i]->name);
+                    defaults.push_back(nullptr);
+                } else {
                     throw std::runtime_error("Function parameter must be an identifier");
                 }
-                params.push_back(node->children[i]->name);
             }
-            functions[node->name] = FunctionDef{params, node->children.back()};
+            functions[node->name] = FunctionDef{params, defaults, node->children.back()};
             return Value(static_cast<std::int64_t>(0));
         }
         case NodeType::STRUCT_DEF: {
@@ -975,13 +1036,19 @@ Value evaluate(const ASTNode* node) {
                     throw std::runtime_error("Struct body must contain field or function definitions");
                 }
                 std::vector<std::string> params;
+                std::vector<const ASTNode*> mdefaults;
                 for (size_t i = 0; i + 1 < child->children.size(); ++i) {
-                    if (child->children[i]->type != NodeType::IDENT) {
+                    if (child->children[i]->type == NodeType::ASSIGN) {
+                        params.push_back(child->children[i]->left->name);
+                        mdefaults.push_back(child->children[i]->right);
+                    } else if (child->children[i]->type == NodeType::IDENT) {
+                        params.push_back(child->children[i]->name);
+                        mdefaults.push_back(nullptr);
+                    } else {
                         throw std::runtime_error("Struct method parameter must be an identifier");
                     }
-                    params.push_back(child->children[i]->name);
                 }
-                def.methods[child->name] = FunctionDef{params, child->children.back()};
+                def.methods[child->name] = FunctionDef{params, mdefaults, child->children.back()};
             }
             structDefs[node->name] = def;
             return Value(static_cast<std::int64_t>(0));
@@ -1098,15 +1165,23 @@ Value evaluate(const ASTNode* node) {
                 throw std::runtime_error("Undefined method: " + node->name);
             }
             const FunctionDef& fn = itMethod->second;
-            if (fn.params.size() != node->children.size()) {
+            size_t reqParams = 0;
+            for (size_t i = 0; i < fn.defaults.size(); ++i) {
+                if (fn.defaults[i] == nullptr) reqParams = i + 1;
+            }
+            if (node->children.size() < reqParams || node->children.size() > fn.params.size()) {
                 throw std::runtime_error("Method '" + node->name + "' expects " +
-                    std::to_string(fn.params.size()) + " args, got " +
-                    std::to_string(node->children.size()));
+                    std::to_string(reqParams) +
+                    (reqParams != fn.params.size() ? "-" + std::to_string(fn.params.size()) : "") +
+                    " args, got " + std::to_string(node->children.size()));
             }
             std::vector<Value> argValues;
-            argValues.reserve(node->children.size());
+            argValues.reserve(fn.params.size());
             for (const auto* arg : node->children) {
                 argValues.push_back(evaluate(arg));
+            }
+            for (size_t i = argValues.size(); i < fn.params.size(); ++i) {
+                argValues.push_back(evaluate(fn.defaults[i]));
             }
             scopes.push_back({});
             scopes.back()["self"] = base;
@@ -1128,6 +1203,110 @@ Value evaluate(const ASTNode* node) {
                 scopes.pop_back();
                 throw;
             }
+        }
+        case NodeType::LAMBDA: {
+            // Register lambda as a function and return its name
+            if (node->children.empty()) {
+                throw std::runtime_error("Malformed lambda");
+            }
+            std::vector<std::string> params;
+            std::vector<const ASTNode*> defaults;
+            for (size_t i = 0; i + 1 < node->children.size(); ++i) {
+                if (node->children[i]->type == NodeType::ASSIGN) {
+                    params.push_back(node->children[i]->left->name);
+                    defaults.push_back(node->children[i]->right);
+                } else {
+                    params.push_back(node->children[i]->name);
+                    defaults.push_back(nullptr);
+                }
+            }
+            functions[node->name] = FunctionDef{params, defaults, node->children.back()};
+            return Value(node->name);
+        }
+        case NodeType::SLICE: {
+            Value container = evaluate(node->left);
+            // children[0] = start, children[1] = end, children[2] = step (can be nullptr)
+            bool hasStart = (node->children.size() > 0 && node->children[0] != nullptr);
+            bool hasEnd = (node->children.size() > 1 && node->children[1] != nullptr);
+            bool hasStep = (node->children.size() > 2 && node->children[2] != nullptr);
+
+            if (container.isVector()) {
+                const auto& vec = container.asVector("slice");
+                std::int64_t len = static_cast<std::int64_t>(vec.size());
+                std::int64_t step = hasStep ? evaluate(node->children[2]).asInt("slice step") : 1;
+                if (step == 0) throw std::runtime_error("Slice step cannot be 0");
+
+                std::int64_t start, end;
+                if (step > 0) {
+                    start = hasStart ? evaluate(node->children[0]).asInt("slice start") : 0;
+                    end = hasEnd ? evaluate(node->children[1]).asInt("slice end") : len;
+                } else {
+                    start = hasStart ? evaluate(node->children[0]).asInt("slice start") : len - 1;
+                    end = hasEnd ? evaluate(node->children[1]).asInt("slice end") : -(len + 1);
+                }
+                // Normalize negatives
+                if (start < 0) start += len;
+                if (end < 0) end += len;
+                // Clamp
+                if (step > 0) {
+                    if (start < 0) start = 0;
+                    if (start > len) start = len;
+                    if (end < 0) end = 0;
+                    if (end > len) end = len;
+                } else {
+                    if (start < -1) start = -1;
+                    if (start >= len) start = len - 1;
+                    if (end < -1) end = -1;
+                    if (end >= len) end = len - 1;
+                }
+                std::vector<Value> result;
+                if (step > 0) {
+                    for (std::int64_t i = start; i < end; i += step)
+                        result.push_back(vec[static_cast<size_t>(i)]);
+                } else {
+                    for (std::int64_t i = start; i > end; i += step)
+                        result.push_back(vec[static_cast<size_t>(i)]);
+                }
+                return Value(result);
+            }
+            if (container.isString()) {
+                const auto& str = container.asString("slice");
+                std::int64_t len = static_cast<std::int64_t>(str.size());
+                std::int64_t step = hasStep ? evaluate(node->children[2]).asInt("slice step") : 1;
+                if (step == 0) throw std::runtime_error("Slice step cannot be 0");
+
+                std::int64_t start, end;
+                if (step > 0) {
+                    start = hasStart ? evaluate(node->children[0]).asInt("slice start") : 0;
+                    end = hasEnd ? evaluate(node->children[1]).asInt("slice end") : len;
+                } else {
+                    start = hasStart ? evaluate(node->children[0]).asInt("slice start") : len - 1;
+                    end = hasEnd ? evaluate(node->children[1]).asInt("slice end") : -(len + 1);
+                }
+                if (start < 0) start += len;
+                if (end < 0) end += len;
+                if (step > 0) {
+                    if (start < 0) start = 0;
+                    if (start > len) start = len;
+                    if (end < 0) end = 0;
+                    if (end > len) end = len;
+                } else {
+                    if (start < -1) start = -1;
+                    if (start >= len) start = len - 1;
+                    if (end < -1) end = -1;
+                    if (end >= len) end = len - 1;
+                }
+                std::string result;
+                if (step > 0) {
+                    for (std::int64_t i = start; i < end; i += step)
+                        result += str[static_cast<size_t>(i)];
+                } else {
+                    for (std::int64_t i = start; i > end; i += step)
+                        result += str[static_cast<size_t>(i)];
+                }
+                return Value(result);
+            }
+            throw std::runtime_error("Slice requires vector or string");
         }
         case NodeType::FUNCTION_CALL: {
             if (node->name == "map") {
@@ -1156,7 +1335,11 @@ Value evaluate(const ASTNode* node) {
                 auto itInit = itStruct->second.methods.find("init");
                 if (itInit != itStruct->second.methods.end()) {
                     const FunctionDef& initFn = itInit->second;
-                    if (!initFn.params.empty()) {
+                    size_t initRequired = 0;
+                    for (size_t i = 0; i < initFn.defaults.size(); ++i) {
+                        if (initFn.defaults[i] == nullptr) initRequired = i + 1;
+                    }
+                    if (initRequired > 0) {
                         return objVal;
                     }
                     scopes.push_back({});
@@ -1456,14 +1639,19 @@ Value evaluate(const ASTNode* node) {
                 // determine comparison function
                 const FunctionDef* userCmp = nullptr;
                 if (node->children.size() == 2) {
-                    // second arg must be a function name
                     const ASTNode* cmpNode = node->children[1];
-                    if (cmpNode->type != NodeType::IDENT) {
-                        throw std::runtime_error(node->name + "() comparator must be a function name");
+                    std::string cmpName;
+                    // Try direct function name first (backward compat)
+                    if (cmpNode->type == NodeType::IDENT && functions.find(cmpNode->name) != functions.end()) {
+                        cmpName = cmpNode->name;
+                    } else {
+                        // Evaluate expression (supports lambdas, variables)
+                        Value cmpVal = evaluate(cmpNode);
+                        cmpName = cmpVal.asString(node->name + "() comparator");
                     }
-                    auto fit = functions.find(cmpNode->name);
+                    auto fit = functions.find(cmpName);
                     if (fit == functions.end()) {
-                        throw std::runtime_error("Undefined comparator function: " + cmpNode->name);
+                        throw std::runtime_error("Undefined comparator function: " + cmpName);
                     }
                     if (fit->second.params.size() != 2) {
                         throw std::runtime_error("Comparator function must take exactly 2 parameters");
@@ -1549,6 +1737,10 @@ Value evaluate(const ASTNode* node) {
                 std::function<void(std::vector<Value>&, int, int)> quicksort =
                     [&](std::vector<Value>& arr, int lo, int hi) {
                     if (lo >= hi) return;
+                    if (hi - lo == 1) {
+                        if (compare(arr[hi], arr[lo])) std::swap(arr[lo], arr[hi]);
+                        return;
+                    }
                     // median-of-three pivot selection
                     int mid = lo + (hi - lo) / 2;
                     if (compare(arr[hi], arr[lo])) std::swap(arr[lo], arr[hi]);
@@ -1754,6 +1946,95 @@ Value evaluate(const ASTNode* node) {
                 throw std::runtime_error("count() expects vector or string as first argument");
             }
 
+            if (node->name == "replace") {
+                if (node->children.size() != 3) {
+                    throw std::runtime_error("replace() expects 3 arguments (string, old, new)");
+                }
+                std::string s = evaluate(node->children[0]).asString("replace()");
+                const std::string& oldStr = evaluate(node->children[1]).asString("replace()");
+                const std::string& newStr = evaluate(node->children[2]).asString("replace()");
+                if (oldStr.empty()) return Value(s);
+                size_t pos = 0;
+                while ((pos = s.find(oldStr, pos)) != std::string::npos) {
+                    s.replace(pos, oldStr.size(), newStr);
+                    pos += newStr.size();
+                }
+                return Value(s);
+            }
+
+            if (node->name == "upper") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("upper() expects 1 argument");
+                }
+                std::string s = evaluate(node->children[0]).asString("upper()");
+                for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+                return Value(s);
+            }
+
+            if (node->name == "lower") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("lower() expects 1 argument");
+                }
+                std::string s = evaluate(node->children[0]).asString("lower()");
+                for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+                return Value(s);
+            }
+
+            if (node->name == "startswith") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("startswith() expects 2 arguments");
+                }
+                const std::string& s = evaluate(node->children[0]).asString("startswith()");
+                const std::string& prefix = evaluate(node->children[1]).asString("startswith()");
+                return Value(static_cast<std::int64_t>(s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0));
+            }
+
+            if (node->name == "endswith") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("endswith() expects 2 arguments");
+                }
+                const std::string& s = evaluate(node->children[0]).asString("endswith()");
+                const std::string& suffix = evaluate(node->children[1]).asString("endswith()");
+                return Value(static_cast<std::int64_t>(s.size() >= suffix.size() && s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0));
+            }
+
+            if (node->name == "trim") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("trim() expects 1 argument");
+                }
+                std::string s = evaluate(node->children[0]).asString("trim()");
+                size_t start = s.find_first_not_of(" \t\r\n");
+                size_t end = s.find_last_not_of(" \t\r\n");
+                if (start == std::string::npos) return Value(std::string(""));
+                return Value(s.substr(start, end - start + 1));
+            }
+
+            if (node->name == "substr") {
+                if (node->children.size() < 2 || node->children.size() > 3) {
+                    throw std::runtime_error("substr() expects 2-3 arguments (string, start[, length])");
+                }
+                const std::string& s = evaluate(node->children[0]).asString("substr()");
+                std::int64_t start = evaluate(node->children[1]).asInt("substr()");
+                if (start < 0) start += static_cast<std::int64_t>(s.size());
+                if (start < 0) start = 0;
+                if (static_cast<size_t>(start) >= s.size()) return Value(std::string(""));
+                if (node->children.size() == 3) {
+                    std::int64_t len = evaluate(node->children[2]).asInt("substr()");
+                    if (len < 0) return Value(std::string(""));
+                    return Value(s.substr(static_cast<size_t>(start), static_cast<size_t>(len)));
+                }
+                return Value(s.substr(static_cast<size_t>(start)));
+            }
+
+            if (node->name == "contains") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("contains() expects 2 arguments");
+                }
+                const std::string& s = evaluate(node->children[0]).asString("contains()");
+                const std::string& sub = evaluate(node->children[1]).asString("contains()");
+                return Value(static_cast<std::int64_t>(s.find(sub) != std::string::npos));
+            }
+
             if (node->name == "swap") {
                 if (node->children.size() != 3) {
                     throw std::runtime_error("swap() expects 3 arguments (vector, i, j)");
@@ -1787,25 +2068,37 @@ Value evaluate(const ASTNode* node) {
             }
 
             if (node->name == "fill") {
-                if (node->children.size() != 2) {
-                    throw std::runtime_error("fill() expects 2 arguments (n, value)");
+                if (node->children.size() < 2) {
+                    throw std::runtime_error("fill() expects at least 2 arguments");
                 }
-                Value nv = evaluate(node->children[0]);
-                Value val = evaluate(node->children[1]);
-                std::int64_t n = nv.asInt("fill()");
-                if (n < 0) throw std::runtime_error("fill() count cannot be negative");
-                std::vector<Value> result;
-                result.reserve(static_cast<size_t>(n));
-                for (std::int64_t i = 0; i < n; ++i) {
-                    // Deep copy vectors so each element is independent
-                    if (val.isVector()) {
-                        std::vector<Value> copy = val.asVector("fill()");
-                        result.push_back(Value(copy));
+                // Last arg is the fill value, all preceding are dimensions
+                Value val = evaluate(node->children.back());
+                std::vector<std::int64_t> dims;
+                for (size_t i = 0; i + 1 < node->children.size(); ++i) {
+                    dims.push_back(evaluate(node->children[i]).asInt("fill()"));
+                    if (dims.back() < 0) throw std::runtime_error("fill() dimension cannot be negative");
+                }
+                // Build from innermost to outermost
+                std::function<Value(size_t)> buildFill = [&](size_t dimIdx) -> Value {
+                    std::int64_t count = dims[dimIdx];
+                    std::vector<Value> result;
+                    result.reserve(static_cast<size_t>(count));
+                    if (dimIdx == dims.size() - 1) {
+                        for (std::int64_t i = 0; i < count; ++i) {
+                            if (val.isVector()) {
+                                result.push_back(Value(val.asVector("fill()")));
+                            } else {
+                                result.push_back(val);
+                            }
+                        }
                     } else {
-                        result.push_back(val);
+                        for (std::int64_t i = 0; i < count; ++i) {
+                            result.push_back(buildFill(dimIdx + 1));
+                        }
                     }
-                }
-                return Value(result);
+                    return Value(result);
+                };
+                return buildFill(0);
             }
 
             // graph(n) — create adjacency list with n empty vectors
@@ -1860,16 +2153,26 @@ Value evaluate(const ASTNode* node) {
                 throw std::runtime_error("Undefined function: " + node->name);
             }
             const FunctionDef& fn = it->second;
-            if (fn.params.size() != node->children.size()) {
+            // Calculate required params (last non-default + 1)
+            size_t requiredParams = 0;
+            for (size_t i = 0; i < fn.defaults.size(); ++i) {
+                if (fn.defaults[i] == nullptr) requiredParams = i + 1;
+            }
+            if (node->children.size() < requiredParams || node->children.size() > fn.params.size()) {
                 throw std::runtime_error("Function '" + node->name + "' expects " +
-                    std::to_string(fn.params.size()) + " args, got " +
-                    std::to_string(node->children.size()));
+                    std::to_string(requiredParams) +
+                    (requiredParams != fn.params.size() ? "-" + std::to_string(fn.params.size()) : "") +
+                    " args, got " + std::to_string(node->children.size()));
             }
 
             std::vector<Value> argValues;
-            argValues.reserve(node->children.size());
+            argValues.reserve(fn.params.size());
             for (const auto* arg : node->children) {
                 argValues.push_back(evaluate(arg));
+            }
+            // Fill in defaults for missing args
+            for (size_t i = argValues.size(); i < fn.params.size(); ++i) {
+                argValues.push_back(evaluate(fn.defaults[i]));
             }
 
             scopes.push_back({});

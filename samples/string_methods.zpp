@@ -1,0 +1,74 @@
+// String manipulation functions
+
+// === upper / lower ===
+println(upper("hello world"))    // HELLO WORLD
+println(lower("HELLO WORLD"))    // hello world
+
+// useful for case-insensitive comparison
+a = "Hello"
+b = "hello"
+println(lower(a) == lower(b))    // 1
+
+// === replace ===
+s = "aababca"
+println(replace(s, "a", "x"))    // xxbxbcx
+println(replace(s, "ab", ""))    // aaca
+
+// cleaning up input
+messy = "1, 2, 3, 4"
+clean = replace(messy, " ", "")
+println(clean)                   // 1,2,3,4
+
+// === startswith / endswith ===
+filename = "solution.zpp"
+println(startswith(filename, "solution"))  // 1
+println(endswith(filename, ".zpp"))        // 1
+println(endswith(filename, ".cpp"))        // 0
+
+// === contains ===
+line = "the quick brown fox"
+println(contains(line, "brown"))  // 1
+println(contains(line, "red"))    // 0
+
+// === trim ===
+raw = "   hello   "
+println(trim(raw))               // hello
+println(len(trim(raw)))          // 5
+
+// === substr ===
+s = "hello world"
+println(substr(s, 6))            // world
+println(substr(s, 0, 5))         // hello
+
+// negative start index counts from end
+println(substr(s, -5))           // world
+println(substr(s, -5, 3))        // wor
+
+// === slicing (also works on strings) ===
+s = "abcdefgh"
+println(s[0:3])                  // abc
+println(s[3:])                   // defgh
+println(s[:4])                   // abcd
+println(s[::2])                  // aceg
+println(s[::-1])                 // hgfedcba
+
+// === combining them ===
+// check if a string is a palindrome
+fn isPalindrome(s) {
+    s = lower(s)
+    return s == s[::-1]
+}
+println(isPalindrome("racecar"))  // 1
+println(isPalindrome("hello"))    // 0
+println(isPalindrome("Madam"))    // 1
+
+// count vowels
+fn countVowels(s) {
+    s = lower(s)
+    cnt = 0
+    for c in split(s, "") {
+        if contains("aeiou", c) { cnt++ }
+    }
+    return cnt
+}
+println(countVowels("Hello World"))  // 3

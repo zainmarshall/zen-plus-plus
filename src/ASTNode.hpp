@@ -15,7 +15,7 @@ enum class NodeType{
     SET_LITERAL,
     // Operators
     ADD, SUB, MUL, DIV, MOD, EXP, //binary
-    BIT_AND, BIT_OR, BIT_XOR,
+    BIT_AND, BIT_OR, BIT_XOR, BIT_SHIFT_LEFT, BIT_SHIFT_RIGHT,
     FACTORIAL, NEG, // unary
     IDENT, ASSIGN, // variables
     // boolean 
@@ -28,7 +28,8 @@ enum class NodeType{
     IMPORT,
     BLOCK,
     POST_INCREMENT, POST_DECREMENT,
-    TERNARY, MULTI_ASSIGN
+    TERNARY, MULTI_ASSIGN,
+    LAMBDA, SLICE
 };
 
 struct ASTNode {

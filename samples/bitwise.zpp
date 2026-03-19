@@ -1,0 +1,81 @@
+// Bitwise operations
+
+// === shift operators ===
+println(1 << 0)     // 1
+println(1 << 10)    // 1024
+println(1 << 20)    // 1048576
+println(1024 >> 3)  // 128
+println(255 >> 4)   // 15
+
+// === compound shift assignments ===
+x = 1
+x <<= 8
+println(x)          // 256
+x >>= 3
+println(x)          // 32
+
+// === common bitmask patterns ===
+
+// check if i-th bit is set
+fn getBit(n, i) {
+    return (n >> i) & 1
+}
+println(getBit(13, 0))   // 1 (13 = 1101)
+println(getBit(13, 1))   // 0
+println(getBit(13, 2))   // 1
+println(getBit(13, 3))   // 1
+
+// set the i-th bit
+fn setBit(n, i) {
+    return n | (1 << i)
+}
+println(setBit(0, 3))    // 8
+
+// clear the i-th bit (XOR trick since there's no bitwise NOT)
+fn clearBit(n, i) {
+    return n ^ (n & (1 << i))
+}
+
+// toggle the i-th bit
+fn toggleBit(n, i) {
+    return n ^ (1 << i)
+}
+println(toggleBit(13, 1))  // 15 (1101 -> 1111)
+println(toggleBit(15, 2))  // 11 (1111 -> 1011)
+
+// count set bits (popcount)
+fn popcount(n) {
+    cnt = 0
+    while n > 0 {
+        cnt += n & 1
+        n >>= 1
+    }
+    return cnt
+}
+println(popcount(13))     // 3 (1101)
+println(popcount(255))    // 8
+println(popcount(1024))   // 1
+
+// === bitmask subset enumeration ===
+// enumerate all subsets of a 3-bit mask
+mask = 7   // 111 in binary
+sub = mask
+while sub > 0 {
+    print(sub, "")
+    sub = (sub - 1) & mask
+}
+println()
+// prints: 7 6 5 4 3 2 1
+
+// === check power of 2 ===
+fn isPow2(n) {
+    return n > 0 && (n & (n - 1)) == 0
+}
+println(isPow2(16))   // 1
+println(isPow2(15))   // 0
+println(isPow2(1))    // 1
+
+// === bitwise AND/OR/XOR (already existed, shown for completeness) ===
+println(12 & 10)    // 8  (1100 & 1010 = 1000)
+println(12 | 10)    // 14 (1100 | 1010 = 1110)
+println(12 ^ 10)    // 6  (1100 ^ 1010 = 0110)

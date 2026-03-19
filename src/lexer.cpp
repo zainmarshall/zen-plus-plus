@@ -176,6 +176,10 @@ std::vector<Token> Lexer::tokenize() {
         char nn = peekChar2();
         if (c == '=' && n == '=') { tokens.push_back({TokenType::EQUAL, 0, 0.0, ""}); advance(); advance(); continue; }
         if (c == '!' && n == '=') { tokens.push_back({TokenType::NOT_EQUAL, 0, 0.0, ""}); advance(); advance(); continue; }
+        if (c == '<' && n == '<' && nn == '=') { tokens.push_back({TokenType::SHIFT_LEFT_ASSIGN, 0, 0.0, ""}); advance(); advance(); advance(); continue; }
+        if (c == '>' && n == '>' && nn == '=') { tokens.push_back({TokenType::SHIFT_RIGHT_ASSIGN, 0, 0.0, ""}); advance(); advance(); advance(); continue; }
+        if (c == '<' && n == '<') { tokens.push_back({TokenType::SHIFT_LEFT, 0, 0.0, ""}); advance(); advance(); continue; }
+        if (c == '>' && n == '>') { tokens.push_back({TokenType::SHIFT_RIGHT, 0, 0.0, ""}); advance(); advance(); continue; }
         if (c == '<' && n == '=') { tokens.push_back({TokenType::LESS_EQUAL, 0, 0.0, ""}); advance(); advance(); continue; }
         if (c == '>' && n == '=') { tokens.push_back({TokenType::GREATER_EQUAL, 0, 0.0, ""}); advance(); advance(); continue; }
         if (c == '*' && n == '*' && nn == '=') { tokens.push_back({TokenType::EXP_ASSIGN, 0, 0.0, ""}); advance(); advance(); advance(); continue; }

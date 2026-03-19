@@ -184,7 +184,7 @@ I compiled the C++ Interpreter over to Web Assembly so I could make a web interp
 - [web view](https://github.com/zainmarshall/zen-plus-plus/commit/2473e45)
 - [Structs + StdLib + Web](https://github.com/zainmarshall/zen-plus-plus/commit/002f27a)
 
-## Zen++ Devlog IX — v1 Polish
+## Zen++ Devlog IX - v1 Polish
 Big batch of changes getting ready for v1. A mix of language features, website fixes, tooling, and docs cleanup.
 
 ### What Changed
@@ -237,7 +237,7 @@ Big batch of changes getting ready for v1. A mix of language features, website f
 - [Extension](https://github.com/zainmarshall/zen-plus-plus/commit/5a3cb6d)
 - [Delete docs/README.md](https://github.com/zainmarshall/zen-plus-plus/commit/4039a76)
 
-## Zen++ Devlog X — v0.1.0 Release Prep
+## Zen++ Devlog X - v0.1.0 Release Prep
 
 Prepping for v0.1.0. Implemented the last missing language features, synced up the website/extension/docs, added a version flag, and just fixed a lot of bugs.
 
@@ -287,9 +287,9 @@ The language has everything you need for competitive programming and then some:
 - Built-in IO: `read()`, `readInt()`, `readFloat()`, `readLine()`, `print()`, `println()`
 
 It runs three ways:
-1. **CLI interpreter** — `zenpp file.zpp` or just `zenpp` for the REPL
-2. **Browser** — full web IDE at [zainmarshall.github.io/zen-plus-plus](https://zainmarshall.github.io/zen-plus-plus/) with syntax highlighting, autocomplete, and the interpreter compiled to WebAssembly
-3. **VS Code** — syntax highlighting extension on the Marketplace
+1. **CLI interpreter** - `zenpp file.zpp` or just `zenpp` for the REPL
+2. **Browser** - full web IDE at [zainmarshall.github.io/zen-plus-plus](https://zainmarshall.github.io/zen-plus-plus/) with syntax highlighting, autocomplete, and the interpreter compiled to WebAssembly
+3. **VS Code** - syntax highlighting extension on the Marketplace
 
 I also solved a the full Codeforces Round 1084 (Div. 3) with Zen++ to prove it works.
 
@@ -328,14 +328,14 @@ I compared my C++ competitive programming macro/template with Zen++ and realized
 
 
 
-## Zen++ Devlog XII — Language Features & Graph Builtins
+## Zen++ Devlog XII - Language Features & Graph Builtins
 
 Big batch of language features, new builtins, and stdlib additions. The main theme was closing the gap between Zen++ and a C++ competitive programming template.
 
 ### What Changed
 
 1. **Ternary operator**
-   - `x = a > b ? a : b` — inline conditionals, nestable.
+   - `x = a > b ? a : b` - inline conditionals, nestable.
    - Added `?` and `:` tokens to lexer, `TERNARY` node type, and right-associative parsing so `a ? b : c ? d : e` works as expected.
 
 2. **Negative indexing**
@@ -343,7 +343,7 @@ Big batch of language features, new builtins, and stdlib additions. The main the
 
 3. **Multiple assignment**
    - `a, b = 1, 2` assigns multiple variables at once.
-   - `a, b = b, a` swaps values — all RHS values are evaluated before any assignment happens.
+   - `a, b = b, a` swaps values - all RHS values are evaluated before any assignment happens.
    - `_` discards a value: `_, b = 0, 42`.
 
 4. **`_` in for loops**
@@ -353,27 +353,75 @@ Big batch of language features, new builtins, and stdlib additions. The main the
    - `"ha" * 3` gives `"hahaha"`. Works both ways: `3 * "ha"`.
 
 6. **New builtins**
-   - `split(s, delim)` — split string into vector of strings.
-   - `join(v, delim)` — join vector elements into a string.
-   - `find(v, x)` — first index of `x` in vector or string, -1 if not found.
-   - `count(v, x)` — count occurrences in vector or string.
-   - `swap(v, i, j)` — swap two elements in a vector (supports negative indices).
-   - `fill(n, val)` — create a vector of `n` copies of `val`. Deep-copies vectors so each element is independent.
+   - `split(s, delim)` - split string into vector of strings.
+   - `join(v, delim)` - join vector elements into a string.
+   - `find(v, x)` - first index of `x` in vector or string, -1 if not found.
+   - `count(v, x)` - count occurrences in vector or string.
+   - `swap(v, i, j)` - swap two elements in a vector (supports negative indices).
+   - `fill(n, val)` - create a vector of `n` copies of `val`. Deep-copies vectors so each element is independent.
 
 7. **Graph builtins**
-   - `graph(n)` — create adjacency list with `n` empty vectors.
-   - `graph(n, m)` — read `m` undirected edges (`u v`) from stdin, build adjacency list.
-   - `dgraph(n, m)` — read `m` directed edges.
-   - `wgraph(n, m)` — read `m` undirected weighted edges (`u v w`), stores `[v, w]` pairs.
-   - `dwgraph(n, m)` — read `m` directed weighted edges.
+   - `graph(n)` - create adjacency list with `n` empty vectors.
+   - `graph(n, m)` - read `m` undirected edges (`u v`) from stdin, build adjacency list.
+   - `dgraph(n, m)` - read `m` directed edges.
+   - `wgraph(n, m)` - read `m` undirected weighted edges (`u v w`), stores `[v, w]` pairs.
+   - `dwgraph(n, m)` - read `m` directed weighted edges.
    - Dijkstra sample went from 8 lines of graph setup to `adj = wgraph(n, m)`.
 
 8. **New stdlib functions** (`import std`)
-   - `sum(v)` — sum a vector.
-   - `lowerBound(v, x)` / `upperBound(v, x)` — binary search returning insertion index in a sorted vector.
-   - `modpow(base, exp, mod)` — modular exponentiation.
-   - `bfs(adj, start)` — BFS shortest paths on unweighted graph, returns distance array.
+   - `sum(v)` - sum a vector.
+   - `lowerBound(v, x)` / `upperBound(v, x)` - binary search returning insertion index in a sorted vector.
+   - `modpow(base, exp, mod)` - modular exponentiation.
+   - `bfs(adj, start)` - BFS shortest paths on unweighted graph, returns distance array.
 
 9. **Internal fix**
-   - `push(v[i], x)` now works — you can push to indexed vectors directly (needed for manual adjacency list building).
+   - `push(v[i], x)` now works - you can push to indexed vectors directly (needed for manual adjacency list building).
+
+## Zen++ Devlog XIII
+
+This one was all about making Zen++ more expressive and closing gaps that were annoying when solving problems.
+
+### What Changed
+
+1. **Lambda functions**
+   - Anonymous functions as expressions: `fn(a, b) { a - b }`.
+   - `sort(v, fn(a, b) { a[1] - b[1] })` - sort a vector of pairs by second element, inline.
+
+2. **Slicing**
+   - Python-style slicing for vectors and strings: `v[1:4]`, `s[0:5]`, `v[::-1]`.
+   - Full syntax: `[start:end]`, `[start:end:step]`. All three parts are optional.
+   - `v[::-1]` - reversed copy. 
+   - Works for strings too: `s[::-1]` reverses a string, `s[0:5]` takes a substring.
+
+3. **Tuple unpacking in for-each**
+   - `for u, v in edges { }` - destructure each element when iterating vectors of vectors.
+   - `for k, v in myMap { }` - iterate key-value pairs of a map.
+   - Supports `_` for discarding: `for _, v in pairs { }`.
+   - This is huge for graph problems where adjacency lists store `[neighbor, weight]` pairs.
+
+4. **Default function arguments**
+   - `fn solve(n, mod = 1000000007) { ... }` - parameters with `= value` get defaults.
+   - Call with fewer args and the defaults fill in: `solve(5)` uses the default mod.
+   - Works in regular functions, struct methods, and lambdas.
+   - Required params must come before optional ones.
+
+5. **Bitwise shift operators**
+   - `<<` and `>>` with correct precedence (between addition and comparison, like C).
+   - Compound assignments: `x <<= 3`, `x >>= 1`.
+   - Essential for bitmask DP and bit manipulation problems.
+
+6. **String manipulation builtins**
+   - `replace(s, old, new)` - replace all occurrences.
+   - `upper(s)` / `lower(s)` - case conversion.
+   - `startswith(s, prefix)` / `endswith(s, suffix)` - boolean checks.
+   - `trim(s)` - strip leading/trailing whitespace.
+   - `substr(s, start)` or `substr(s, start, len)` - substring with negative index support.
+   - `contains(s, sub)` - check if string contains substring.
+
+7. **Multi-dimensional `fill()`**
+   - `fill(n, m, val)` creates an n×m grid filled with `val`.
+   - `fill(n, m, k, val)` creates a 3D array. Works for any number of dimensions.
+   - Each row is an independent deep copy, so `grid[0][0] = 5` doesn't affect `grid[1][0]`.
+   - Before: `grid = fill(n, fill(m, 0))`. Now: `grid = fill(n, m, 0)`. Cleaner and fewer mistakes.
+
 

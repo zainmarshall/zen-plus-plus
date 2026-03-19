@@ -32,6 +32,7 @@ private:
     ASTNode* parseBitwiseXor();
     ASTNode* parseBitwiseAnd();
     ASTNode* parseComparison();
+    ASTNode* parseShift();
     ASTNode* parseExpr();
     ASTNode* parseTerm();
     ASTNode* parseExp();
