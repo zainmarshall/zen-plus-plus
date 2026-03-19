@@ -946,12 +946,244 @@ dist = dijkstra(adj, 0)
 println(dist)`,
     input: "4 5\n0 1 4\n0 2 1\n2 1 2\n1 3 1\n2 3 5",
   },
+  {
+    name: "String Methods",
+    code: `// String manipulation functions
+
+// case conversion
+println(upper("hello world"))    // HELLO WORLD
+println(lower("HELLO WORLD"))    // hello world
+
+// replace all occurrences
+s = "aababca"
+println(replace(s, "a", "x"))    // xxbxbcx
+println(replace(s, "ab", ""))    // aaca
+
+// prefix/suffix checks
+filename = "solution.zpp"
+println(startswith(filename, "solution"))  // 1
+println(endswith(filename, ".zpp"))        // 1
+
+// contains
+line = "the quick brown fox"
+println(contains(line, "brown"))  // 1
+
+// trim whitespace
+println(trim("   hello   "))     // hello
+
+// substring (supports negative index)
+s = "hello world"
+println(substr(s, 6))            // world
+println(substr(s, 0, 5))         // hello
+println(substr(s, -5))           // world
+
+// slicing works on strings too
+s = "abcdefgh"
+println(s[0:3])                  // abc
+println(s[::-1])                 // hgfedcba
+
+// palindrome check using slicing + lower
+fn isPalindrome(s) {
+    s = lower(s)
+    return s == s[::-1]
+}
+println(isPalindrome("racecar"))  // 1
+println(isPalindrome("Madam"))    // 1
+println(isPalindrome("hello"))    // 0`,
+    input: "",
+  },
+  {
+    name: "Bitwise Operations",
+    code: `// Bitwise shift operators and common patterns
+
+// shift operators
+println(1 << 10)    // 1024
+println(1024 >> 3)  // 128
+
+// compound shift assignment
+x = 1
+x <<= 8
+println(x)          // 256
+x >>= 3
+println(x)          // 32
+
+// check if i-th bit is set
+fn getBit(n, i) {
+    return (n >> i) & 1
+}
+println(getBit(13, 0))   // 1 (13 = 1101)
+println(getBit(13, 1))   // 0
+println(getBit(13, 2))   // 1
+
+// set the i-th bit
+fn setBit(n, i) {
+    return n | (1 << i)
+}
+println(setBit(0, 3))    // 8
+
+// toggle the i-th bit
+fn toggleBit(n, i) {
+    return n ^ (1 << i)
+}
+println(toggleBit(13, 1))  // 15 (1101 -> 1111)
+
+// popcount (count set bits)
+fn popcount(n) {
+    cnt = 0
+    while n > 0 {
+        cnt = cnt + (n & 1)
+        n >>= 1
+    }
+    return cnt
+}
+println(popcount(13))     // 3 (1101)
+println(popcount(255))    // 8
+
+// check power of 2
+fn isPow2(n) {
+    return n > 0 && (n & (n - 1)) == 0
+}
+println(isPow2(16))   // 1
+println(isPow2(15))   // 0`,
+    input: "",
+  },
+  {
+    name: "Sorting & Lambdas",
+    code: `// Sorting with inline lambda comparators
+
+// basic sort
+v = [5, 3, 1, 4, 2]
+sort(v)
+println(v)   // [1, 2, 3, 4, 5]
+
+// sort descending with lambda
+v = [5, 3, 1, 4, 2]
+sort(v, fn(a, b) { b - a })
+println(v)   // [5, 4, 3, 2, 1]
+
+// sort pairs by second element
+pairs = [[1, 30], [2, 10], [3, 20]]
+sort(pairs, fn(a, b) { a[1] - b[1] })
+println(pairs)   // [[2, 10], [3, 20], [1, 30]]
+
+// sort strings by length
+words = ["banana", "fig", "apple", "kiwi"]
+sort(words, fn(a, b) { len(a) - len(b) })
+println(words)   // [fig, kiwi, apple, banana]
+
+// named comparator still works too
+fn bySecThenFirst(a, b) {
+    if a[1] != b[1] { return a[1] - b[1] }
+    return a[0] - b[0]
+}
+items = [[2, 1], [1, 1], [3, 2]]
+sort(items, bySecThenFirst)
+println(items)   // [[1, 1], [2, 1], [3, 2]]
+
+// slicing for reversed copy (non-destructive)
+v = [1, 2, 3, 4, 5]
+println(v[::-1])   // [5, 4, 3, 2, 1]
+println(v)         // [1, 2, 3, 4, 5] (unchanged)`,
+    input: "",
+  },
+  {
+    name: "Tuple Unpacking & Defaults",
+    code: `// Tuple unpacking in for-each loops
+
+// unpack vector of vectors
+edges = [[1, 2], [3, 4], [5, 6]]
+for u, v in edges {
+    println(u, "->", v)
+}
+
+// unpack key-value pairs from a map
+scores = map()
+scores["alice"] = 95
+scores["bob"] = 87
+scores["charlie"] = 92
+for name, score in scores {
+    println(name + ": " + score)
+}
+
+// skip values with _
+pairs = [[10, 20], [30, 40], [50, 60]]
+for _, second in pairs {
+    println(second)
+}
+
+// default function arguments
+fn greet(name, greeting = "Hello") {
+    println(greeting, name)
+}
+greet("World")          // Hello World
+greet("World", "Hi")    // Hi World
+
+fn power(base, exp = 2) {
+    result = 1
+    for _ exp {
+        result = result * base
+    }
+    return result
+}
+println(power(5))       // 25
+println(power(5, 3))    // 125
+
+// multi-dimensional fill
+grid = fill(3, 4, 0)
+println(grid)
+grid[1][2] = 42
+println(grid[1])   // only row 1 changed
+println(grid[0])   // row 0 still zeros`,
+    input: "",
+  },
+  {
+    name: "Slicing",
+    code: `// Python-style slicing for vectors and strings
+
+v = [10, 20, 30, 40, 50]
+
+// [start:end] — elements from start up to (not including) end
+println(v[1:3])     // [20, 30]
+
+// [:end] — first N elements
+println(v[:2])      // [10, 20]
+
+// [start:] — from start to end
+println(v[3:])      // [40, 50]
+
+// [::step] — every Nth element
+println(v[::2])     // [10, 30, 50]
+
+// [::-1] — reversed copy
+println(v[::-1])    // [50, 40, 30, 20, 10]
+
+// negative indices
+println(v[-2:])     // [40, 50]
+println(v[-3:-1])   // [30, 40]
+
+// strings work the same way
+s = "hello world"
+println(s[0:5])     // hello
+println(s[6:])      // world
+println(s[::-1])    // dlrow olleh
+
+// practical: check palindrome
+word = "racecar"
+println(word == word[::-1])  // 1
+
+// practical: reverse a vector without modifying original
+original = [1, 2, 3, 4, 5]
+reversed = original[::-1]
+println(original)   // [1, 2, 3, 4, 5]
+println(reversed)   // [5, 4, 3, 2, 1]`,
+    input: "",
+  },
 ];
 
 // Populate dropdown with groups
 const groups = [
   { label: "Basics", items: [0, 1, 2] },
-  { label: "Language Features", items: [3, 4, 13] },
+  { label: "Language Features", items: [3, 4, 13, 16, 17, 18, 19, 20] },
   { label: "Stdlib (import std)", items: [5, 6, 7, 14, 15] },
   { label: "Codeforces 2200", items: [8, 9, 10, 11, 12] },
 ];
