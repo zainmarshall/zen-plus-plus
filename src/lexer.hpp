@@ -10,7 +10,8 @@ enum class TokenType { INT, FLOAT, PLUS, MINUS, STAR, SLASH, MOD, LPAREN, RPAREN
     SHIFT_LEFT, SHIFT_RIGHT,
     BIT_AND_ASSIGN, BIT_OR_ASSIGN, BIT_XOR_ASSIGN,
     SHIFT_LEFT_ASSIGN, SHIFT_RIGHT_ASSIGN,
-    STRING,
+    TILDE,
+    STRING, FSTRING,
     TRUE, FALSE, EQUAL, NOT_EQUAL, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL, AND, OR, NOT,
     IF, ELSE, WHILE, FOR, FN, RETURN, IMPORT, STRUCT, BREAK, CONTINUE, IN,
     COMMA, DOT, QUESTION, COLON,
@@ -21,6 +22,7 @@ struct Token {
     std::int64_t value;
     double fvalue;
     std::string name;
+    bool preceded_by_newline = false;
 };
 
 class Lexer {

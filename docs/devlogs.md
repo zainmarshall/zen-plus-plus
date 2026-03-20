@@ -424,4 +424,34 @@ This one was all about making Zen++ more expressive and closing gaps that were a
    - Each row is an independent deep copy, so `grid[0][0] = 5` doesn't affect `grid[1][0]`.
    - Before: `grid = fill(n, fill(m, 0))`. Now: `grid = fill(n, m, 0)`. Cleaner and fewer mistakes.
 
+## Zen++ Devlog XIV
+
+More language features. Bitwise NOT, f-strings, chained comparisons, destructuring, min/max on vectors, and all/any predicates.
+
+### What Changed
+
+1. **Bitwise NOT (`~`)**
+   - `~x` gives bitwise complement. `clearBit` is now just `n & ~(1 << i)`.
+
+2. **`min(v)` / `max(v)` on vectors**
+   - `min([3, 1, 4])` returns `1`. `max([3, 1, 4])` returns `4`.
+   - Still works with 2 args: `min(a, b)`. No `import std` needed anymore.
+
+3. **String interpolation**
+   - `f"hello {name}, {1 + 2} = {3}"` - expressions inside `{}` are evaluated and stringified.
+
+4. **`all(v, fn)` / `any(v, fn)`**
+   - `all(v, fn(x) { x > 0 })` - true if every element passes.
+   - `any(v, fn(x) { x > 0 })` - true if at least one passes. Short-circuits.
+
+5. **Chained comparisons**
+   - `1 < x < 10` works like `1 < x && x < 10`. Any number of comparisons can be chained.
+
+6. **Destructuring assignment**
+   - `[a, b, c] = v` unpacks a vector into variables. Supports `_` to discard.
+   - `[x, _, z] = getPoint()` - grab first and third, skip second.
+
+7. **Newline-aware postfix parsing**
+   - Fixed a parser ambiguity where `[` on a new line was consumed as an index operator from the previous expression. Indexing with `[` now requires it to be on the same line as the expression.
+
 

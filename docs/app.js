@@ -1178,12 +1178,79 @@ println(original)   // [1, 2, 3, 4, 5]
 println(reversed)   // [5, 4, 3, 2, 1]`,
     input: "",
   },
+  {
+    name: "F-Strings & Destructuring",
+    code: `// String interpolation with f-strings
+name = "Zen++"
+version = 14
+println(f"Welcome to {name} v{version}!")
+println(f"{1 + 2} + {3 + 4} = {1+2+3+4}")
+
+a = 10
+b = 3
+println(f"{a} / {b} = {a / b} remainder {a % b}")
+
+v = [1, 2, 3]
+println(f"vector {v} has length {len(v)}")
+
+// destructuring assignment
+[x, y, z] = [10, 20, 30]
+println(f"x={x}, y={y}, z={z}")
+
+// discard with _
+[first, _, last] = [100, 200, 300]
+println(f"first={first}, last={last}")
+
+// destructuring from a function
+fn getPoint() {
+    return [3, 4]
+}
+[px, py] = getPoint()
+println(f"point: ({px}, {py})")
+println(f"distance: {(px**2 + py**2)**0.5}")`,
+    input: "",
+  },
+  {
+    name: "Chained Comparisons & Predicates",
+    code: `// Chained comparisons — a < b < c works!
+x = 5
+println(f"x={x}: 1 < x < 10 → {1 < x < 10}")
+println(f"x={x}: 1 < x < 3  → {1 < x < 3}")
+println(f"1 <= 2 <= 3 <= 4  → {1 <= 2 <= 3 <= 4}")
+
+// min/max on vectors (no import std needed)
+v = [3, 1, 4, 1, 5, 9, 2, 6]
+println(f"min={min(v)}, max={max(v)}")
+
+// still works with 2 args
+println(f"min(3,7)={min(3, 7)}")
+
+// all/any predicates with lambdas
+evens = [2, 4, 6, 8]
+println(f"all even? {all(evens, fn(x) { x % 2 == 0 })}")
+println(f"any > 7?  {any(evens, fn(x) { x > 7 })}")
+
+mixed = [1, -2, 3, -4]
+println(f"all positive? {all(mixed, fn(x) { x > 0 })}")
+println(f"any negative? {any(mixed, fn(x) { x < 0 })}")
+
+// bitwise NOT
+println(f"~0 = {~0}")
+println(f"~1 = {~1}")
+
+// clearBit with ~
+fn clearBit(n, i) {
+    return n & ~(1 << i)
+}
+println(f"clearBit(15, 2) = {clearBit(15, 2)}")`,
+    input: "",
+  },
 ];
 
 // Populate dropdown with groups
 const groups = [
   { label: "Basics", items: [0, 1, 2] },
-  { label: "Language Features", items: [3, 4, 13, 16, 17, 18, 19, 20] },
+  { label: "Language Features", items: [3, 4, 13, 16, 17, 18, 19, 20, 21, 22] },
   { label: "Stdlib (import std)", items: [5, 6, 7, 14, 15] },
   { label: "Codeforces 2200", items: [8, 9, 10, 11, 12] },
 ];

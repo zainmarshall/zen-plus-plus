@@ -159,6 +159,43 @@ ASTNode* Parser::parseStatment() {
             return new ASTNode(NodeType::ASSIGN, new ASTNode(varName), rhs);
         }
     }
+    // Destructuring: [a, b, c] = expr
+    if (tok.type == TokenType::LBRACKET) {
+        size_t savedPos = pos;
+        advance(); // consume [
+        std::vector<std::string> names;
+        bool isDestructuring = true;
+        while (true) {
+            if (currentToken().type == TokenType::IDENTIFIER) {
+                names.push_back(currentToken().name);
+                advance();
+            } else {
+                isDestructuring = false;
+                break;
+            }
+            if (currentToken().type == TokenType::COMMA) {
+                advance();
+                continue;
+            }
+            break;
+        }
+        if (isDestructuring && !names.empty() && currentToken().type == TokenType::RBRACKET) {
+            advance(); // consume ]
+            if (currentToken().type == TokenType::ASSIGN) {
+                advance(); // consume =
+                ASTNode* rhs = parseTernary();
+                std::vector<ASTNode*> children;
+                for (const auto& n : names) {
+                    children.push_back(new ASTNode(n));
+                }
+                children.push_back(rhs);
+                ASTNode* result = new ASTNode(NodeType::DESTRUCT_ASSIGN, children);
+                result->value = static_cast<std::int64_t>(names.size());
+                return result;
+            }
+        }
+        pos = savedPos;
+    }
     return parseTernary();
 }
 
@@ -412,10 +449,15 @@ ASTNode* Parser::parseShift() {
 
 ASTNode* Parser::parseComparison() {
     ASTNode* left = parseShift();
-    Token next = currentToken();
-    if(next.type == TokenType::EQUAL || next.type == TokenType::NOT_EQUAL ||
-       next.type == TokenType::LESS || next.type == TokenType::GREATER ||
-       next.type == TokenType::LESS_EQUAL || next.type == TokenType::GREATER_EQUAL) {
+    auto isCompOp = [](TokenType t) {
+        return t == TokenType::EQUAL || t == TokenType::NOT_EQUAL ||
+               t == TokenType::LESS || t == TokenType::GREATER ||
+               t == TokenType::LESS_EQUAL || t == TokenType::GREATER_EQUAL;
+    };
+    if (!isCompOp(currentToken().type)) return left;
+
+    ASTNode* result = nullptr;
+    while (isCompOp(currentToken().type)) {
         Token tok = currentToken();
         advance();
         ASTNode* right = parseShift();
@@ -429,9 +471,12 @@ ASTNode* Parser::parseComparison() {
             case TokenType::GREATER_EQUAL: nodeType = NodeType::GREATER_EQUAL; break;
             default: throw std::runtime_error("Invalid comparison operator");
         }
-        return new ASTNode(nodeType, left, right);
+        ASTNode* cmp = new ASTNode(nodeType, left, right);
+        if (result == nullptr) { result = cmp; }
+        else { result = new ASTNode(NodeType::AND, result, cmp); }
+        left = right;
     }
-    return left;
+    return result;
 }
 
 ASTNode* Parser::parseLogicalAnd() {
@@ -536,7 +581,7 @@ ASTNode* Parser::parseTerm() {
 ASTNode* Parser::parsePostfix() {
     ASTNode* node = parseFactor();
     while (true) {
-        if (currentToken().type == TokenType::LBRACKET) {
+        if (currentToken().type == TokenType::LBRACKET && !currentToken().preceded_by_newline) {
             advance(); // consume [
             // Parse first expression (or detect empty start for slice)
             ASTNode* startExpr = nullptr;
@@ -617,6 +662,11 @@ ASTNode* Parser::parseFactor() {
         ASTNode* rhs = parseFactor();
         return new ASTNode(NodeType::NOT, rhs, nullptr);
     }
+    if (tok.type == TokenType::TILDE) {
+        advance();
+        ASTNode* rhs = parseFactor();
+        return new ASTNode(NodeType::BIT_NOT, rhs, nullptr);
+    }
     if (tok.type == TokenType::PLUS_PLUS || tok.type == TokenType::MINUS_MINUS) {
         bool isInc = (tok.type == TokenType::PLUS_PLUS);
         advance();
@@ -641,6 +691,42 @@ ASTNode* Parser::parseFactor() {
     if (tok.type == TokenType::INT) { advance(); node = new ASTNode(tok.value); }
     else if (tok.type == TokenType::FLOAT) { advance(); node = new ASTNode(NodeType::FLOAT, tok.fvalue); }
     else if (tok.type == TokenType::STRING) { advance(); node = new ASTNode(NodeType::STRING, tok.name); }
+    else if (tok.type == TokenType::FSTRING) {
+        advance();
+        const std::string& content = tok.name;
+        ASTNode* result = nullptr;
+        size_t i = 0;
+        while (i < content.size()) {
+            if (content[i] == '{') {
+                size_t depth = 1;
+                size_t j = i + 1;
+                while (j < content.size() && depth > 0) {
+                    if (content[j] == '{') depth++;
+                    else if (content[j] == '}') depth--;
+                    j++;
+                }
+                std::string exprStr = content.substr(i + 1, j - i - 2);
+                Lexer exprLexer(exprStr);
+                auto exprTokens = exprLexer.tokenize();
+                Parser exprParser(exprTokens);
+                ASTNode* exprAst = exprParser.parseExpression();
+                ASTNode* strNode = new ASTNode(NodeType::FUNCTION_CALL, "str", std::vector<ASTNode*>{exprAst});
+                if (result == nullptr) { result = strNode; }
+                else { result = new ASTNode(NodeType::ADD, result, strNode); }
+                i = j;
+            } else {
+                size_t j = i;
+                while (j < content.size() && content[j] != '{') j++;
+                std::string literal = content.substr(i, j - i);
+                ASTNode* litNode = new ASTNode(NodeType::STRING, literal);
+                if (result == nullptr) { result = litNode; }
+                else { result = new ASTNode(NodeType::ADD, result, litNode); }
+                i = j;
+            }
+        }
+        if (result == nullptr) { result = new ASTNode(NodeType::STRING, std::string("")); }
+        node = result;
+    }
     else if (tok.type == TokenType::TRUE) { advance(); node = new ASTNode(NodeType::BOOL, static_cast<std::int64_t>(1)); }
     else if (tok.type == TokenType::FALSE) { advance(); node = new ASTNode(NodeType::BOOL, static_cast<std::int64_t>(0)); }
     else if (tok.type == TokenType::LBRACKET) {

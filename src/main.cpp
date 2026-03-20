@@ -621,6 +621,7 @@ Value evaluate(const ASTNode* node) {
         case NodeType::BIT_XOR: return Value(evaluate(node->left).asInt("Bitwise XOR") ^ evaluate(node->right).asInt("Bitwise XOR"));
         case NodeType::BIT_SHIFT_LEFT: return Value(evaluate(node->left).asInt("Left shift") << evaluate(node->right).asInt("Left shift"));
         case NodeType::BIT_SHIFT_RIGHT: return Value(evaluate(node->left).asInt("Right shift") >> evaluate(node->right).asInt("Right shift"));
+        case NodeType::BIT_NOT: return Value(~evaluate(node->left).asInt("Bitwise NOT"));
         case NodeType::NEG: {
             Value v = evaluate(node->left);
             if (v.isInt()) return Value(-v.asInt("Unary minus"));
@@ -1004,6 +1005,18 @@ Value evaluate(const ASTNode* node) {
                 }
             }
             return values.back();
+        }
+        case NodeType::DESTRUCT_ASSIGN: {
+            size_t numNames = static_cast<size_t>(node->value);
+            Value rhs = evaluate(node->children[numNames]);
+            const auto& vec = rhs.asVector("destructuring assignment");
+            for (size_t i = 0; i < numNames; ++i) {
+                const std::string& name = node->children[i]->name;
+                if (name != "_") {
+                    setVariable(name, i < vec.size() ? vec[i] : Value(static_cast<std::int64_t>(0)));
+                }
+            }
+            return rhs;
         }
         case NodeType::FUNCTION_DEF: {
             if (node->children.empty()) {
@@ -2033,6 +2046,96 @@ Value evaluate(const ASTNode* node) {
                 std::string s = evaluate(node->children[0]).asString("contains()");
                 std::string sub = evaluate(node->children[1]).asString("contains()");
                 return Value(static_cast<std::int64_t>(s.find(sub) != std::string::npos));
+            }
+
+            if (node->name == "min" || node->name == "max") {
+                bool isMin = (node->name == "min");
+                if (node->children.size() == 1) {
+                    Value v = evaluate(node->children[0]);
+                    const auto& vec = v.asVector(node->name + "()");
+                    if (vec.empty()) throw std::runtime_error(node->name + "() on empty vector");
+                    Value best = vec[0];
+                    for (size_t i = 1; i < vec.size(); ++i) {
+                        if (best.isNumber() && vec[i].isNumber()) {
+                            double a = best.asDouble(node->name);
+                            double b = vec[i].asDouble(node->name);
+                            if (isMin ? b < a : b > a) best = vec[i];
+                        } else if (best.isString() && vec[i].isString()) {
+                            const std::string& a = std::get<std::string>(best.data);
+                            const std::string& b = std::get<std::string>(vec[i].data);
+                            if (isMin ? b < a : b > a) best = vec[i];
+                        } else {
+                            throw std::runtime_error(node->name + "() cannot compare mixed types");
+                        }
+                    }
+                    return best;
+                }
+                if (node->children.size() == 2) {
+                    Value a = evaluate(node->children[0]);
+                    Value b = evaluate(node->children[1]);
+                    if (a.isNumber() && b.isNumber()) {
+                        double da = a.asDouble(node->name);
+                        double db = b.asDouble(node->name);
+                        if (isMin ? da <= db : da >= db) return a;
+                        return b;
+                    }
+                    if (a.isString() && b.isString()) {
+                        const std::string& sa = std::get<std::string>(a.data);
+                        const std::string& sb = std::get<std::string>(b.data);
+                        if (isMin ? sa <= sb : sa >= sb) return a;
+                        return b;
+                    }
+                    throw std::runtime_error(node->name + "() expects comparable values");
+                }
+                throw std::runtime_error(node->name + "() expects 1 or 2 arguments");
+            }
+
+            if (node->name == "all" || node->name == "any") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error(node->name + "() expects 2 arguments (vector, predicate)");
+                }
+                Value vecVal = evaluate(node->children[0]);
+                const auto& vec = vecVal.asVector(node->name + "()");
+                // Resolve predicate function
+                const ASTNode* predNode = node->children[1];
+                std::string fnName;
+                if (predNode->type == NodeType::IDENT && functions.find(predNode->name) != functions.end()) {
+                    fnName = predNode->name;
+                } else {
+                    Value predVal = evaluate(predNode);
+                    fnName = predVal.asString(node->name + "() predicate");
+                }
+                auto fit = functions.find(fnName);
+                if (fit == functions.end()) {
+                    throw std::runtime_error("Undefined predicate function: " + fnName);
+                }
+                if (fit->second.params.size() != 1) {
+                    throw std::runtime_error(node->name + "() predicate must take exactly 1 parameter");
+                }
+                bool isAll = (node->name == "all");
+                const FunctionDef& pred = fit->second;
+                for (const auto& elem : vec) {
+                    scopes.push_back({});
+                    scopes.back()[pred.params[0]] = elem;
+                    functionCallDepth++;
+                    Value result;
+                    try {
+                        result = evaluate(pred.body);
+                        functionCallDepth--;
+                        scopes.pop_back();
+                    } catch (const ReturnSignal& signal) {
+                        functionCallDepth--;
+                        scopes.pop_back();
+                        result = signal.value;
+                    } catch (...) {
+                        functionCallDepth--;
+                        scopes.pop_back();
+                        throw;
+                    }
+                    if (isAll && !result.truthy()) return Value(static_cast<std::int64_t>(0));
+                    if (!isAll && result.truthy()) return Value(static_cast<std::int64_t>(1));
+                }
+                return Value(static_cast<std::int64_t>(isAll ? 1 : 0));
             }
 
             if (node->name == "swap") {
