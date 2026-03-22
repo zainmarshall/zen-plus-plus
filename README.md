@@ -22,9 +22,11 @@ Zen++ features C-style syntax with curly braces, no semicolons, automatic type i
 ### Interpreter
 
 ```bash
-git clone https://github.com/zainmarshall/zen-plus-plus.git
-cd zen-plus-plus
-bash install.sh
+# Fresh install
+git clone https://github.com/zainmarshall/zen-plus-plus.git && cd zen-plus-plus && bash install.sh
+
+# Update
+cd zen-plus-plus && git pull && bash install.sh
 ```
 
 This builds the interpreter and installs it to `/usr/local/bin`. Requires `make` and a C++17 compiler. After installing, run `zenpp` for the REPL or `zenpp file.zpp` to execute a file.
