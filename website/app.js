@@ -1277,7 +1277,99 @@ samplesEl.addEventListener("change", () => {
   localStorage.setItem("zenpp-input", sample.input);
   renderHighlight();
   outputEl.textContent = "";
+  // Update the default option text to show what's loaded
+  samplesEl.querySelector('option[value=""]').textContent = sample.name;
   samplesEl.value = "";
 });
+
+// ── Theme switcher ──────────────────────────────
+
+const THEMES = {
+  "Tokyo Night": {
+    bg: "#1a1b26", surface: "#1f2335", "surface-2": "#24283b",
+    text: "#a9b1d6", muted: "#565f89", accent: "#7aa2f7", border: "#292e42",
+    "tok-keyword": "#bb9af7", "tok-builtin": "#7aa2f7", "tok-string": "#9ece6a",
+    "tok-number": "#ff9e64", "tok-comment": "#565f89", "tok-operator": "#89ddff",
+    swatch: "#7aa2f7",
+  },
+  "Dracula": {
+    bg: "#282a36", surface: "#2d2f3f", "surface-2": "#343746",
+    text: "#f8f8f2", muted: "#6272a4", accent: "#bd93f9", border: "#44475a",
+    "tok-keyword": "#ff79c6", "tok-builtin": "#8be9fd", "tok-string": "#f1fa8c",
+    "tok-number": "#bd93f9", "tok-comment": "#6272a4", "tok-operator": "#ff79c6",
+    swatch: "#bd93f9",
+  },
+  "Catppuccin Mocha": {
+    bg: "#1e1e2e", surface: "#232334", "surface-2": "#2a2a3c",
+    text: "#cdd6f4", muted: "#6c7086", accent: "#89b4fa", border: "#313244",
+    "tok-keyword": "#cba6f7", "tok-builtin": "#89b4fa", "tok-string": "#a6e3a1",
+    "tok-number": "#fab387", "tok-comment": "#6c7086", "tok-operator": "#89dceb",
+    swatch: "#cba6f7",
+  },
+  "GitHub Dark": {
+    bg: "#0d1117", surface: "#161b22", "surface-2": "#1c2129",
+    text: "#c9d1d9", muted: "#484f58", accent: "#58a6ff", border: "#30363d",
+    "tok-keyword": "#ff7b72", "tok-builtin": "#79c0ff", "tok-string": "#a5d6ff",
+    "tok-number": "#79c0ff", "tok-comment": "#484f58", "tok-operator": "#ff7b72",
+    swatch: "#161b22",
+  },
+  "Gruvbox": {
+    bg: "#1d2021", surface: "#282828", "surface-2": "#32302f",
+    text: "#ebdbb2", muted: "#665c54", accent: "#fabd2f", border: "#3c3836",
+    "tok-keyword": "#fb4934", "tok-builtin": "#83a598", "tok-string": "#b8bb26",
+    "tok-number": "#d3869b", "tok-comment": "#665c54", "tok-operator": "#fe8019",
+    swatch: "#fabd2f",
+  },
+  "Nord": {
+    bg: "#2e3440", surface: "#333a47", "surface-2": "#3b4252",
+    text: "#d8dee9", muted: "#616e88", accent: "#88c0d0", border: "#434c5e",
+    "tok-keyword": "#81a1c1", "tok-builtin": "#88c0d0", "tok-string": "#a3be8c",
+    "tok-number": "#b48ead", "tok-comment": "#616e88", "tok-operator": "#81a1c1",
+    swatch: "#88c0d0",
+  },
+};
+
+function applyTheme(name) {
+  const t = THEMES[name];
+  if (!t) return;
+  const root = document.documentElement;
+  for (const [key, val] of Object.entries(t)) {
+    if (key === "swatch") continue;
+    root.style.setProperty("--" + key, val);
+  }
+  localStorage.setItem("zenpp-theme", name);
+  // Update active state
+  document.querySelectorAll(".theme-option").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.theme === name);
+  });
+}
+
+// Build theme list
+const themeListEl = document.getElementById("theme-list");
+for (const [name, t] of Object.entries(THEMES)) {
+  const btn = document.createElement("button");
+  btn.className = "theme-option";
+  btn.dataset.theme = name;
+  btn.innerHTML = `<span class="theme-swatch" style="background:${t.swatch}"></span>${name}`;
+  btn.addEventListener("click", () => applyTheme(name));
+  themeListEl.appendChild(btn);
+}
+
+// Settings toggle
+const settingsBtn = document.getElementById("settings-btn");
+const settingsPopup = document.getElementById("settings-popup");
+settingsBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  settingsPopup.classList.toggle("visible");
+});
+document.addEventListener("click", (e) => {
+  if (!settingsPopup.contains(e.target)) {
+    settingsPopup.classList.remove("visible");
+  }
+});
+
+// Restore saved theme
+const savedTheme = localStorage.getItem("zenpp-theme") || "Tokyo Night";
+applyTheme(savedTheme);
 
 renderHighlight();

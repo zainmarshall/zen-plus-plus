@@ -60,7 +60,9 @@ body {
 
 .toolbar-links {
   display: flex;
+  align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .docs-btn {
@@ -353,6 +355,96 @@ textarea {
 
 .ac-item .ac-kind.stdlib {
   color: var(--tok-string);
+}
+
+/* ── Settings ─────────────────────────────────── */
+
+.settings-btn {
+  background: transparent !important;
+  border: none !important;
+  color: var(--muted);
+  padding: 4px 6px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.settings-btn:hover {
+  color: var(--text);
+}
+
+.settings-btn svg {
+  display: block;
+}
+
+.settings-popup {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 160px;
+  box-shadow: 0 8px 24px var(--shadow);
+  z-index: 50;
+}
+
+.settings-popup.visible {
+  display: block;
+}
+
+.settings-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--display);
+  color: var(--text);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.theme-option:hover {
+  background: var(--border);
+}
+
+.theme-option.active {
+  background: var(--accent);
+  color: #0b1a22;
+}
+
+.theme-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.theme-option.active .theme-swatch {
+  border-color: rgba(0,0,0,0.3);
 }
 
 /* ── Mobile ───────────────────────────────────── */

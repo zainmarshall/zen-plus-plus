@@ -473,4 +473,10 @@ Four optimizations to the interpreter. Combined: **11x speedup** on composite be
 - **Vector push (100K):** 0.16s → 0.14s (1.1x)
 - **Composite (all + fib(25)):** 33.67s → 3.05s (**11x**)
 
+## Zen++ Devlog XVI — Website Polish
+
+Two small website improvements:
+
+1. **Sample dropdown label** — selecting a sample now updates the dropdown text to show what's loaded instead of always saying "Samples".
+2. **Settings / theme switcher** — added a settings cog in the toolbar that opens a theme picker. Ships with 6 themes: Tokyo Night (default), Dracula, Catppuccin Mocha, GitHub Dark, Gruvbox, and Nord. Selection persists via localStorage.
 
