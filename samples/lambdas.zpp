@@ -1,0 +1,11 @@
+// Lambda functions — anonymous functions as expressions
+
+// sort by custom comparator
+pairs = [[1, 30], [2, 10], [3, 20]]
+sort(pairs, fn(a, b) { a[1] - b[1] })
+println(pairs)   // [[2, 10], [3, 20], [1, 30]]
+
+// filter with all/any
+v = [2, 4, 6, 8, 10]
+println(all(v, fn(x) { x % 2 == 0 }))   // 1
+println(any(v, fn(x) { x > 9 }))         // 1

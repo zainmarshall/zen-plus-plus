@@ -1,151 +1,69 @@
-# Zen++
+# Zen++ Language Support
 
-A fast, lightweight interpreted language designed for competitive programming.
+Syntax highlighting, intellisense, and one-click run for [Zen++](https://github.com/zainmarshall/zen-plus-plus) - a fast, lightweight interpreted language designed for competitive programming.
 
-Zen++ features C-style syntax with curly braces, no semicolons, automatic type inference, and a standard library with common data structures out of the box.
+**[Try Zen++ in your browser](https://zainmarshall.github.io/zen-plus-plus/)** | **[Language Reference](https://github.com/zainmarshall/zen-plus-plus/blob/master/docs/language-reference.md)** | **[GitHub](https://github.com/zainmarshall/zen-plus-plus)**
 
+## Features
 
-## Language Overview
+### Syntax Highlighting
 
-### Variables
+Full TextMate grammar covering all Zen++ syntax:
 
-Variables are created on first assignment. No declarations needed.
+- Keywords (`fn`, `if`, `else`, `while`, `for`, `return`, `struct`, `import`, `break`, `continue`, `in`)
+- 40+ built-in functions (`println`, `read`, `sort`, `reverse`, `fill`, `rand`, etc.)
+- Stdlib types (`Stack`, `Queue`, `DSU`, `FenwickTree`, `SegTree`, etc.)
+- F-string interpolation - expressions inside `{}` are highlighted normally, string parts stay green
+- User-defined function calls get their own highlight color
+- Numbers, strings, comments (line and block), operators including `**`, `<<`, `>>`, `~`
+
+### Run Button
+
+Click the play button in the editor title bar or press **Cmd+Enter** (Mac) / **Ctrl+Enter** (Windows/Linux) to run the current `.zpp` file. Requires `zenpp` to be installed and on your PATH ([install instructions](https://github.com/zainmarshall/zen-plus-plus#installation)).
+
+### Editor Support
+
+- Auto-closing brackets, quotes, and braces
+- Auto-indentation on `{` and dedent on `}`
+- Line and block comment toggling
+
+## What is Zen++?
+
+Zen++ is a language built for competitive programming. It has C-style syntax but strips away everything slow to type - no semicolons, no type declarations, no `int main()`. A Codeforces solution that takes 10 lines in C++ takes 5 in Zen++.
 
 ```zenpp
-x = 42
-name = "zen"
-pi = 3.14
+// read n numbers, sort them, print the median
+n = read()
+a = read(n)
+sort(a)
+println(a[n / 2])
 ```
 
-### Data Types
-
-| Type | Example |
-|------|---------|
-| Integer | `42`, `-7` |
-| Float | `3.14`, `0.5` |
-| String | `"hello"` |
-| Boolean | `true`, `false` |
-| Vector | `[1, 2, 3]` |
-| Map | `map()` |
-| Set | `set()` |
-
-### Control Flow
-
 ```zenpp
-// if / else if / else
-if x > 0 {
-    println("positive")
-} else if x == 0 {
-    println("zero")
-} else {
-    println("negative")
-}
-
-// while loop
-while n > 0 {
-    n--
-}
-
-// for loop — three forms
-for i 5 { }              // i = 0, 1, 2, 3, 4
-for i 2 5 { }            // i = 2, 3, 4
-for i 10 0 -1 { }        // i = 10, 9, 8, ..., 1
-```
-
-### Functions
-
-```zenpp
-fn gcd(a, b) {
-    while b != 0 {
-        t = a % b
-        a = b
-        b = t
-    }
-    return a
-}
-```
-
-### Operators
-
-Arithmetic: `+` `-` `*` `/` `%` `**`
-Comparison: `==` `!=` `<` `>` `<=` `>=`
-Logical: `&&` `||` `!`
-Bitwise: `&` `|` `^`
-Unary: `++` `--` `!` (factorial, postfix)
-Assignment: `=` `+=` `-=` `*=` `/=` `%=` `**=`
-
-### Vectors
-
-```zenpp
-v = [1, 2, 3]
-push(v, 4)
-println(v[0])       // 1
-println(len(v))     // 4
-println(pop(v))     // 4
-```
-
-### Strings
-
-```zenpp
-s = "hello" + " world"
-println(len(s))       // 11
-println(s[0])         // ascii value of 'h'
-```
-
-### Maps & Sets
-
-```zenpp
-m = map()
-m.set("key", 100)
-println(m.get("key", 0))   // 100
-println(m.has("key"))       // 1
-
-s = set()
-s.add(5)
-println(s.has(5))           // 1
-```
-
-### Structs
-
-```zenpp
-struct Point {
-    fn init(x, y) {
-        self.x = x
-        self.y = y
-    }
-    fn dist() {
-        return (self.x ** 2 + self.y ** 2)
-    }
-}
-
-p = Point()
-p.init(3, 4)
-println(p.dist())   // 25
-```
-
-### Standard Library
-
-```zenpp
+// Dijkstra's shortest path in 3 lines
 import std
+n, m = read(), read()
+adj = wgraph(n, m)
+println(dijkstra(adj, 0))
 ```
 
-**Math:** `min(a,b)` `max(a,b)` `abs(x)` `gcd(a,b)`
+```zenpp
+// f-strings, lambdas, slicing
+v = [3, 1, 4, 1, 5, 9]
+sort(v, fn(a, b) { b - a })
+println(f"top 3: {v[:3]}")
+```
 
-**Data Structures:** `Stack`, `Queue`, `Map`, `Set`, `DSU`, `PriorityQueue`, `Pair`, `Tuple`
+The language includes vectors, maps, sets, structs, lambdas, slicing, destructuring, f-strings, chained comparisons, and a standard library with Stack, Queue, DSU, PriorityQueue, FenwickTree, SegTree, Dijkstra, BFS, binary search, prefix sums, and more.
 
-### Built-in Functions
+## Requirements
 
-| Function | Description |
-|----------|-------------|
-| `print(...)` | Print values separated by spaces (no newline) |
-| `println(...)` | Print values separated by spaces, with newline |
-| `ord(s)` | ASCII code of first character of string |
-| `chr(n)` | Single-character string from ASCII code |
-| `parseInt(s)` | Parse a string as an integer |
-| `read()` | Read integer from stdin |
-| `readFloat()` | Read float from stdin |
-| `readLine()` | Read line as string from stdin |
-| `len(x)` | Length of string or vector |
-| `push(v, x)` | Append to vector |
-| `pop(v)` | Remove and return last element |
+To use the run button, install the Zen++ interpreter:
 
+```bash
+git clone https://github.com/zainmarshall/zen-plus-plus.git
+cd zen-plus-plus
+bash install.sh
+```
+
+Syntax highlighting works without the interpreter installed.

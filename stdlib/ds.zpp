@@ -201,3 +201,79 @@ struct Tuple {
     fn set(i, v) { self.values[i] = v }
     fn size() { return len(self.values) }
 }
+
+struct FenwickTree {
+    fn init(n) {
+        self.n = n
+        self.tree = fill(n + 1, 0)
+    }
+    fn update(i, delta) {
+        i = i + 1
+        while i <= self.n {
+            self.tree[i] = self.tree[i] + delta
+            i = i + (i & (-i))
+        }
+    }
+    fn query(i) {
+        i = i + 1
+        s = 0
+        while i > 0 {
+            s = s + self.tree[i]
+            i = i - (i & (-i))
+        }
+        return s
+    }
+    fn rangeQuery(l, r) {
+        if l == 0 { return self.query(r) }
+        return self.query(r) - self.query(l - 1)
+    }
+}
+
+struct SegTree {
+    fn init(n) {
+        self.n = n
+        self.tree = fill(4 * n, 0)
+    }
+    fn _build(nd, arr, tl, tr) {
+        if tl == tr {
+            self.tree[nd] = arr[tl]
+            return 0
+        }
+        tm = (tl + tr) / 2
+        self._build(nd * 2, arr, tl, tm)
+        self._build(nd * 2 + 1, arr, tm + 1, tr)
+        self.tree[nd] = self.tree[nd * 2] + self.tree[nd * 2 + 1]
+    }
+    fn build(arr) {
+        self.n = len(arr)
+        self.tree = fill(4 * self.n, 0)
+        self._build(1, arr, 0, self.n - 1)
+    }
+    fn _update(nd, tl, tr, pos, val) {
+        if tl == tr {
+            self.tree[nd] = val
+            return 0
+        }
+        tm = (tl + tr) / 2
+        if pos <= tm {
+            self._update(nd * 2, tl, tm, pos, val)
+        } else {
+            self._update(nd * 2 + 1, tm + 1, tr, pos, val)
+        }
+        self.tree[nd] = self.tree[nd * 2] + self.tree[nd * 2 + 1]
+    }
+    fn update(pos, val) {
+        self._update(1, 0, self.n - 1, pos, val)
+    }
+    fn _query(nd, tl, tr, l, r) {
+        if l > r { return 0 }
+        if l == tl && r == tr { return self.tree[nd] }
+        tm = (tl + tr) / 2
+        ql = self._query(nd * 2, tl, tm, l, min(r, tm))
+        qr = self._query(nd * 2 + 1, tm + 1, tr, max(l, tm + 1), r)
+        return ql + qr
+    }
+    fn query(l, r) {
+        return self._query(1, 0, self.n - 1, l, r)
+    }
+}

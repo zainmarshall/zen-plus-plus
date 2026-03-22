@@ -29,22 +29,15 @@ fn is_sorted(a) {
 
 fn solve() {
     n = read()
-    a = []
-    for i n { push(a, read()) }
+    a = read(n)
 
     b = []
-    for i n { push(b, primebase(a[i])) }
+    for x in a { push(b, primebase(x)) }
 
     if is_sorted(a) {
         println("Bob")
     } else {
-        has_multi = 0
-        for x in b {
-            if x == -1 {
-                has_multi = 1
-                break
-            }
-        }
+        has_multi = any(b, fn(x) { x == -1 })
         if has_multi {
             println("Alice")
         } else if is_sorted(b) {

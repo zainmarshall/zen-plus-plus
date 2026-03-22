@@ -17,6 +17,7 @@
 #include <unordered_set>
 #include <memory>
 #include <algorithm>
+#include <random>
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "ASTNode.hpp"
@@ -257,6 +258,7 @@ struct StructDef {
     std::vector<std::pair<std::string, const ASTNode*>> fields;
 };
 
+std::mt19937_64 rng(std::random_device{}());
 std::string executableDir;
 
 Signal currentSignal = Signal::NONE;
@@ -312,11 +314,13 @@ inline void popScope() {
 }
 
 Value* findVariable(const std::string& name) {
-    for (size_t i = scopeDepth + 1; i-- > 0;) {
-        auto found = scopes[i].find(name);
-        if (found != scopes[i].end()) {
-            return &found->second;
-        }
+    // Check current scope first
+    auto found = scopes[scopeDepth].find(name);
+    if (found != scopes[scopeDepth].end()) return &found->second;
+    // Then check global scope
+    if (scopeDepth > 0) {
+        found = scopes[0].find(name);
+        if (found != scopes[0].end()) return &found->second;
     }
     return nullptr;
 }
@@ -330,10 +334,17 @@ Value getVariable(const std::string& name) {
 }
 
 void setVariable(const std::string& name, const Value& value) {
-    for (size_t i = scopeDepth + 1; i-- > 0;) {
-        auto found = scopes[i].find(name);
-        if (found != scopes[i].end()) {
-            found->second = value;
+    // Check current scope first
+    auto found = scopes[scopeDepth].find(name);
+    if (found != scopes[scopeDepth].end()) {
+        found->second = value;
+        return;
+    }
+    // Then check global scope
+    if (scopeDepth > 0) {
+        found = scopes[0].find(name);
+        if (found != scopes[0].end()) {
+            scopes[0].find(name)->second = value;
             return;
         }
     }
@@ -910,6 +921,15 @@ Value evaluate(const ASTNode* node) {
                     const auto& vec = collection.asVector("for-each");
                     for (size_t i = 0; i < vec.size(); ++i) {
                         if (!skipVar) setVariable(varNode->name, vec[i]);
+                        result = evaluate(body);
+                        if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
+                        if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
+                        if (currentSignal == Signal::RETURN) return result;
+                    }
+                } else if (collection.isString()) {
+                    const auto& str = std::get<std::string>(collection.data);
+                    for (size_t i = 0; i < str.size(); ++i) {
+                        if (!skipVar) setVariable(varNode->name, Value(std::string(1, str[i])));
                         result = evaluate(body);
                         if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
                         if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
@@ -2245,6 +2265,158 @@ Value evaluate(const ASTNode* node) {
                 return Value(adj);
             }
 
+            // rand(lo, hi) — random integer in [lo, hi]
+            if (node->name == "rand") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("rand() expects 2 arguments (lo, hi)");
+                }
+                std::int64_t lo = evaluate(node->children[0]).asInt("rand()");
+                std::int64_t hi = evaluate(node->children[1]).asInt("rand()");
+                std::uniform_int_distribution<std::int64_t> dist(lo, hi);
+                return Value(dist(rng));
+            }
+
+            // randvec(n, lo, hi) — vector of n random ints in [lo, hi]
+            if (node->name == "randvec") {
+                if (node->children.size() != 3) {
+                    throw std::runtime_error("randvec() expects 3 arguments (n, lo, hi)");
+                }
+                std::int64_t n = evaluate(node->children[0]).asInt("randvec()");
+                std::int64_t lo = evaluate(node->children[1]).asInt("randvec()");
+                std::int64_t hi = evaluate(node->children[2]).asInt("randvec()");
+                std::uniform_int_distribution<std::int64_t> dist(lo, hi);
+                std::vector<Value> result;
+                result.reserve(static_cast<size_t>(n));
+                for (std::int64_t i = 0; i < n; i++) {
+                    result.push_back(Value(dist(rng)));
+                }
+                return Value(result);
+            }
+
+            // exit() — terminate program
+            if (node->name == "exit") {
+                std::exit(0);
+            }
+
+            // reverse(v) — reverse vector in-place, return it
+            if (node->name == "reverse") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("reverse() expects 1 argument");
+                }
+                const ASTNode* targetNode = node->children[0];
+                if (targetNode->type == NodeType::IDENT) {
+                    Value* target = findVariable(targetNode->name);
+                    if (!target) throw std::runtime_error("Undefined variable: " + targetNode->name);
+                    if (target->isVector()) {
+                        auto& vec = target->asVectorRef("reverse()");
+                        std::reverse(vec.begin(), vec.end());
+                        return *target;
+                    }
+                    if (target->isString()) {
+                        auto& s = std::get<std::string>(target->data);
+                        std::reverse(s.begin(), s.end());
+                        return *target;
+                    }
+                    throw std::runtime_error("reverse() expects vector or string");
+                }
+                Value val = evaluate(targetNode);
+                if (val.isVector()) {
+                    auto& vec = std::get<std::vector<Value>>(val.data);
+                    std::reverse(vec.begin(), vec.end());
+                    return val;
+                }
+                if (val.isString()) {
+                    auto& s = std::get<std::string>(val.data);
+                    std::reverse(s.begin(), s.end());
+                    return val;
+                }
+                throw std::runtime_error("reverse() expects vector or string");
+            }
+
+            // unique(v) — remove consecutive duplicates in-place
+            if (node->name == "unique") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("unique() expects 1 argument");
+                }
+                const ASTNode* targetNode = node->children[0];
+                Value val = evaluate(targetNode);
+                auto& vec = std::get<std::vector<Value>>(val.data);
+                if (vec.empty()) return val;
+                std::vector<Value> result;
+                result.push_back(vec[0]);
+                for (size_t i = 1; i < vec.size(); i++) {
+                    bool same = false;
+                    if (result.back().isInt() && vec[i].isInt()) {
+                        same = std::get<std::int64_t>(result.back().data) == std::get<std::int64_t>(vec[i].data);
+                    } else if (result.back().isString() && vec[i].isString()) {
+                        same = std::get<std::string>(result.back().data) == std::get<std::string>(vec[i].data);
+                    }
+                    if (!same) result.push_back(vec[i]);
+                }
+                if (targetNode->type == NodeType::IDENT) {
+                    Value* target = findVariable(targetNode->name);
+                    if (target) {
+                        std::get<std::vector<Value>>(target->data) = result;
+                        return *target;
+                    }
+                }
+                return Value(result);
+            }
+
+            // sorted(v) — return a sorted copy
+            if (node->name == "sorted") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("sorted() expects 1 argument");
+                }
+                Value val = evaluate(node->children[0]);
+                auto vec = val.asVector("sorted()");
+                std::sort(vec.begin(), vec.end(), [](const Value& a, const Value& b) {
+                    if (a.isInt() && b.isInt()) return std::get<std::int64_t>(a.data) < std::get<std::int64_t>(b.data);
+                    if (a.isFloat() && b.isFloat()) return std::get<double>(a.data) < std::get<double>(b.data);
+                    if (a.isString() && b.isString()) return std::get<std::string>(a.data) < std::get<std::string>(b.data);
+                    return false;
+                });
+                return Value(vec);
+            }
+
+            // flatten(v) — flatten one level of nesting
+            if (node->name == "flatten") {
+                if (node->children.size() != 1) {
+                    throw std::runtime_error("flatten() expects 1 argument");
+                }
+                Value val = evaluate(node->children[0]);
+                const auto& vec = val.asVector("flatten()");
+                std::vector<Value> result;
+                for (const auto& elem : vec) {
+                    if (elem.isVector()) {
+                        const auto& inner = std::get<std::vector<Value>>(elem.data);
+                        result.insert(result.end(), inner.begin(), inner.end());
+                    } else {
+                        result.push_back(elem);
+                    }
+                }
+                return Value(result);
+            }
+
+            // zip(a, b) — pair up two vectors into [[a[0],b[0]], [a[1],b[1]], ...]
+            if (node->name == "zip") {
+                if (node->children.size() != 2) {
+                    throw std::runtime_error("zip() expects 2 arguments");
+                }
+                Value va = evaluate(node->children[0]);
+                Value vb = evaluate(node->children[1]);
+                const auto& a = va.asVector("zip()");
+                const auto& b = vb.asVector("zip()");
+                size_t n = std::min(a.size(), b.size());
+                std::vector<Value> result;
+                result.reserve(n);
+                for (size_t i = 0; i < n; i++) {
+                    std::vector<Value> pair = {a[i], b[i]};
+                    result.push_back(Value(pair));
+                }
+                return Value(result);
+            }
+
             auto it = functions.find(node->name);
             if (it == functions.end()) {
                 throw std::runtime_error("Undefined function: " + node->name);
@@ -2502,7 +2674,7 @@ int main(int argc, char* argv[]){
     if (argc == 2) {
         std::string arg = argv[1];
         if (arg == "--version" || arg == "-v") {
-            std::cout << "zenpp 0.1.0\n";
+            std::cout << "zenpp 0.2.0\n";
             return 0;
         }
         return runFile(argv[1]);

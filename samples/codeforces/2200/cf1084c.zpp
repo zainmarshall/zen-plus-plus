@@ -8,8 +8,7 @@ fn solve() {
 
     st = Stack()
     st.init()
-    for i len(s) {
-        c = s[i]
+    for c in s {
         if st.size() > 0 && c == st.peek() {
             st.pop()
         } else {

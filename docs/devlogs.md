@@ -454,16 +454,16 @@ More language features. Bitwise NOT, f-strings, chained comparisons, destructuri
 7. **Newline-aware postfix parsing**
    - Fixed a parser ambiguity where `[` on a new line was consumed as an index operator from the previous expression. Indexing with `[` now requires it to be on the same line as the expression.
 
-## Zen++ Devlog XV — Interpreter Optimization
+## Zen++ Devlog XV - Interpreter Optimization
 
 Four optimizations to the interpreter. Combined: **11x speedup** on composite benchmark (33.7s → 3.05s).
 
 ### What Changed
 
-1. **Flag-based control flow** — replaced C++ `throw`/`catch` for `return`/`break`/`continue` with a `Signal` enum. Function calls: 7.5s → 0.4s (**17x**).
-2. **Arena allocator** — AST nodes allocated from contiguous 4096-node blocks instead of individual `new`. Better cache locality.
-3. **Scope frame reuse** — function calls reuse cleared `unordered_map` frames instead of alloc/free each call. Variable ops: 1.14s → 1.00s.
-4. **Constant folding** — `1 + 2 + 3` folds to `6` at parse time.
+1. **Flag-based control flow** - replaced C++ `throw`/`catch` for `return`/`break`/`continue` with a `Signal` enum. Function calls: 7.5s → 0.4s (**17x**).
+2. **Arena allocator** - AST nodes allocated from contiguous 4096-node blocks instead of individual `new`. Better cache locality.
+3. **Scope frame reuse** - function calls reuse cleared `unordered_map` frames instead of alloc/free each call. Variable ops: 1.14s → 1.00s.
+4. **Constant folding** - `1 + 2 + 3` folds to `6` at parse time.
 
 ### Benchmarks (before → after)
 
@@ -473,10 +473,48 @@ Four optimizations to the interpreter. Combined: **11x speedup** on composite be
 - **Vector push (100K):** 0.16s → 0.14s (1.1x)
 - **Composite (all + fib(25)):** 33.67s → 3.05s (**11x**)
 
-## Zen++ Devlog XVI — Website Polish
+## Zen++ Devlog XVI - Website Polish
 
-Two small website improvements:
+### What Changed
 
-1. **Sample dropdown label** — selecting a sample now updates the dropdown text to show what's loaded instead of always saying "Samples".
-2. **Settings / theme switcher** — added a settings cog in the toolbar that opens a theme picker. Ships with 6 themes: Tokyo Night (default), Dracula, Catppuccin Mocha, GitHub Dark, Gruvbox, and Nord. Selection persists via localStorage.
+1. **Sample dropdown label** - selecting a sample now updates the dropdown text to show what's loaded instead of always saying "Samples".
+2. **Settings / theme switcher** - added a settings cog in the toolbar that opens a theme picker. Ships with 6 themes: Tokyo Night (default), Dracula, Catppuccin Mocha, GitHub Dark, Gruvbox, and Nord. Selection persists via localStorage.
+
+## Zen++ Devlog XVII - New Builtins, Data Structures & Polish
+
+### What Changed
+
+1. **New builtins**
+   - `rand(lo, hi)`, `randvec(n, lo, hi)` - random number generation.
+   - `exit()` - terminate program.
+   - `reverse(v)` - reverse vector or string in-place.
+   - `unique(v)` - remove consecutive duplicates.
+   - `sorted(v)` - return a sorted copy without modifying the original.
+   - `flatten(v)` - flatten one level of nesting.
+   - `zip(a, b)` - pair up two vectors into `[[a[0],b[0]], ...]`.
+
+2. **String iteration** - `for c in s { }` iterates over each character in a string.
+
+3. **FenwickTree and SegTree** (`import std`)
+   - `FenwickTree` - point update + prefix/range sum queries in O(log n).
+   - `SegTree` - range sum queries + point updates in O(log n). Build from an array with `st.build(arr)`.
+
+4. **Scoping fix** - fixed a bug where local variables in recursive functions would leak into parent calls. Functions now correctly see only their own scope + globals.
+
+5. **VS Code extension v0.2.0 + web IDE syntax highlighting**
+   - F-string interpolation highlighting - expressions inside `{}` are colored normally, string parts stay green.
+   - All new builtins highlighted (`sorted`, `unique`, `flatten`, `zip`, `rand`, `replace`, `upper`, `lower`, `all`, `any`, etc.).
+   - Stdlib classes highlighted as types (`FenwickTree`, `SegTree`, `MinPriorityQueue`, etc.).
+   - Bitwise shift (`<<`, `>>`) and NOT (`~`) operator highlighting.
+   - User-defined function calls get their own highlight color in VS Code.
+   - VS Code extension and web IDE are now in sync.
+
+6. **Web IDE intellisense overhaul**
+   - Autocomplete now shows full function signatures with parameter names and short descriptions instead of just empty parens (e.g. `push(v, x)` with "append x to vector v").
+   - Added code snippets for `fn`, `for`, `while`, `if`, `struct`.
+
+7. **Samples cleanup**
+   - Removed test files, added 5 new demos (fenwick tree, segment tree, lambdas, slicing, f-strings).
+   - Modernized all 8 Codeforces solutions with new syntax (`read(n)`, slicing, `for c in s`, `any()`).
+   - Website samples synced 1:1 with file samples (22 total across 5 categories).
 

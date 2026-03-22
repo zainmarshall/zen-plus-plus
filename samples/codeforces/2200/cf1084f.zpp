@@ -16,18 +16,10 @@ fn solve() {
         push(ay, yi)
     }
 
-    // sort indices by y descending (insertion sort)
+    // sort indices by y descending
     idx = []
     for i n { push(idx, i) }
-    for i 1 n {
-        j = i
-        while j > 0 && ay[idx[j]] > ay[idx[j - 1]] {
-            tmp = idx[j]
-            idx[j] = idx[j - 1]
-            idx[j - 1] = tmp
-            j--
-        }
-    }
+    sort(idx, fn(a, b) { ay[b] - ay[a] })
 
     // sweep k from n down to 0
     pq = MinPriorityQueue()

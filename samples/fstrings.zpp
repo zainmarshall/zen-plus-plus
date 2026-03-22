@@ -1,0 +1,11 @@
+// F-strings — string interpolation with expressions
+
+name = "Zen++"
+version = 1
+println(f"{name} v0.{version}.0")
+
+a, b = 10, 3
+println(f"{a} / {b} = {a / b} remainder {a % b}")
+
+v = [1, 2, 3, 4, 5]
+println(f"sum of {v} = {v[0] + v[1] + v[2] + v[3] + v[4]}")

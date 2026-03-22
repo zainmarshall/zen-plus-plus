@@ -115,6 +115,20 @@ a, b = b, a
 _, b = 0, 42
 ```
 
+### Destructuring Assignment
+
+Unpack a vector into individual variables:
+
+```zenpp
+v = [1, 2, 3]
+[a, b, c] = v
+println(a)             // 1
+println(c)             // 3
+
+// use _ to skip elements you don't need
+[x, _, z] = getPoint()
+```
+
 ## Operators
 
 ### Precedence (highest to lowest)
@@ -122,18 +136,19 @@ _, b = 0, 42
 | Precedence | Operators | Description |
 |------------|-----------|-------------|
 | 1 | `()` `[]` `.` `x++` `x--` `x!` | Grouping, index, access, postfix |
-| 2 | `!x` `++x` `--x` `-x` | Prefix unary |
+| 2 | `!x` `~x` `++x` `--x` `-x` | Prefix unary |
 | 3 | `**` | Exponentiation (right-associative) |
 | 4 | `*` `/` `%` | Multiplicative |
 | 5 | `+` `-` | Additive |
-| 6 | `==` `!=` `<` `>` `<=` `>=` | Comparison |
-| 7 | `&` | Bitwise AND |
-| 8 | `^` | Bitwise XOR |
-| 9 | `\|` | Bitwise OR |
-| 10 | `&&` | Logical AND |
-| 11 | `\|\|` | Logical OR |
-| 12 | `? :` | Ternary |
-| 13 | `=` `+=` `-=` `*=` `/=` `%=` `**=` `&=` `\|=` `^=` | Assignment |
+| 6 | `<<` `>>` | Bitwise shift |
+| 7 | `==` `!=` `<` `>` `<=` `>=` | Comparison |
+| 8 | `&` | Bitwise AND |
+| 9 | `^` | Bitwise XOR |
+| 10 | `\|` | Bitwise OR |
+| 11 | `&&` | Logical AND |
+| 12 | `\|\|` | Logical OR |
+| 13 | `? :` | Ternary |
+| 14 | `=` `+=` `-=` `*=` `/=` `%=` `**=` `&=` `\|=` `^=` `<<=` `>>=` | Assignment |
 
 ### Arithmetic
 
@@ -183,11 +198,19 @@ x **= 3     // 1
 println(7 & 3)    // 3
 println(7 | 3)    // 7
 println(7 ^ 3)    // 4
+println(~0)       // -1 (bitwise NOT)
+
+println(1 << 10)  // 1024 (left shift)
+println(1024 >> 5) // 32  (right shift)
 
 x = 15
 x &= 6         // 6
 x |= 8         // 14
 x ^= 3         // 13
+
+y = 1
+y <<= 4        // 16
+y >>= 2        // 4
 ```
 
 ### Comparison
@@ -201,6 +224,16 @@ println(3 < 4)     // 1
 println(3 > 4)     // 0
 println(3 >= 3)    // 1
 println(3 <= 2)    // 0
+```
+
+#### Chained Comparisons
+
+Comparisons can be chained, just like in Python:
+
+```zenpp
+x = 5
+println(1 < x < 10)    // 1 (equivalent to 1 < x && x < 10)
+println(0 <= x <= 4)   // 0
 ```
 
 ### Logical
@@ -296,6 +329,25 @@ for x in v {
 }
 ```
 
+#### Tuple Unpacking in for-each
+
+Destructure elements directly in the loop variable:
+
+```zenpp
+edges = [[1, 2], [3, 4], [5, 6]]
+for u, v in edges {
+    println(u, v)     // 1 2, then 3 4, then 5 6
+}
+
+// iterate key-value pairs in a map
+m = map()
+m["a"] = 1
+m["b"] = 2
+for k, v in m {
+    println(k, v)
+}
+```
+
 ### break and continue
 
 ```zenpp
@@ -330,6 +382,33 @@ fn fib(n) {
 println(fib(10))   // 55
 ```
 
+### Default Arguments
+
+Parameters can have default values:
+
+```zenpp
+fn solve(n, mod = 1000000007) {
+    return n % mod
+}
+
+println(solve(42))              // 42
+println(solve(42, 100))         // 42
+```
+
+### Lambda Functions
+
+Anonymous functions use the `fn` keyword without a name:
+
+```zenpp
+add = fn(a, b) { a + b }
+println(add(3, 4))             // 7
+
+// common use: custom sort comparator
+v = [[3, "c"], [1, "a"], [2, "b"]]
+sort(v, fn(a, b) { a[0] - b[0] })
+println(v)                      // [[1, "a"], [2, "b"], [3, "c"]]
+```
+
 ### No Return Value
 
 Functions without an explicit `return` return `0` by default.
@@ -356,6 +435,36 @@ println(len(s))        // 5
 
 // indexing (returns single character)
 println(s[0])          // h
+```
+
+### String Interpolation (f-strings)
+
+Prefix a string with `f` to embed expressions inside `{}`:
+
+```zenpp
+name = "world"
+println(f"hello {name}")          // hello world
+println(f"1 + 2 = {1 + 2}")      // 1 + 2 = 3
+```
+
+### String Repeat
+
+Multiply a string by an integer to repeat it:
+
+```zenpp
+println("ha" * 3)      // hahaha
+println("-" * 20)       // --------------------
+```
+
+### String Slicing
+
+Strings support Python-style slicing:
+
+```zenpp
+s = "hello world"
+println(s[0:5])        // hello
+println(s[6:])         // world
+println(s[::-1])       // dlrow olleh
 ```
 
 ### Escape Sequences
@@ -389,6 +498,18 @@ v = [1, 2, 3]
 push(v, 4)           // [1, 2, 3, 4]
 println(len(v))        // 4
 last = pop(v)        // last = 4, v = [1, 2, 3]
+```
+
+### Slicing
+
+Vectors support Python-style slicing:
+
+```zenpp
+v = [10, 20, 30, 40, 50]
+println(v[1:4])        // [20, 30, 40]
+println(v[:3])         // [10, 20, 30]
+println(v[2:])         // [30, 40, 50]
+println(v[::-1])       // [50, 40, 30, 20, 10]
 ```
 
 ### Concatenation
@@ -723,6 +844,30 @@ println(pq.pop())      // 1
 println(pq.top())      // 3
 ```
 
+#### FenwickTree (Binary Indexed Tree)
+
+```zenpp
+import std
+ft = FenwickTree()
+ft.init(10)              // 10 elements, zero-indexed
+ft.update(3, 5)          // add 5 to index 3
+ft.update(7, 2)          // add 2 to index 7
+println(ft.query(5))     // prefix sum [0..5]
+println(ft.rangeQuery(3, 7))  // sum [3..7]
+```
+
+#### SegTree (Segment Tree)
+
+```zenpp
+import std
+arr = [1, 3, 5, 7, 9, 11]
+st = SegTree()
+st.build(arr)
+println(st.query(1, 3))    // sum of arr[1..3] = 15
+st.update(2, 10)            // set index 2 to 10
+println(st.query(1, 3))    // sum of arr[1..3] = 20
+```
+
 #### Pair and Tuple
 
 ```zenpp
@@ -771,6 +916,27 @@ println(t.get(1))       // 99
 | `count(v, x)` | Count occurrences of `x` in vector or string |
 | `swap(v, i, j)` | Swap elements at indices `i` and `j` in vector |
 | `fill(n, val)` | Create a vector of `n` copies of `val` |
+| `fill(n, m, val)` | Create an `n`×`m` 2D grid filled with `val` |
+| `fill(n, m, k, val)` | Create an `n`×`m`×`k` 3D array filled with `val` |
+| `replace(s, old, new)` | Replace all occurrences of `old` with `new` in string |
+| `upper(s)` | Convert string to uppercase |
+| `lower(s)` | Convert string to lowercase |
+| `startswith(s, prefix)` | Check if string starts with prefix (1 or 0) |
+| `endswith(s, suffix)` | Check if string ends with suffix (1 or 0) |
+| `trim(s)` | Strip leading and trailing whitespace |
+| `substr(s, start)` | Substring from `start` to end |
+| `substr(s, start, len)` | Substring from `start` with length `len` |
+| `contains(s, sub)` | Check if string contains substring (1 or 0) |
+| `sorted(v)` | Return a sorted copy of vector (original unchanged) |
+| `unique(v)` | Remove consecutive duplicates in vector in-place |
+| `flatten(v)` | Flatten one level of nesting |
+| `zip(a, b)` | Pair up two vectors into `[[a[0],b[0]], ...]` |
+| `all(v, fn)` | True if all elements satisfy predicate |
+| `any(v, fn)` | True if any element satisfies predicate |
+| `min(v)` / `max(v)` | Min/max element of a vector |
+| `rand(lo, hi)` | Random integer in `[lo, hi]` |
+| `randvec(n, lo, hi)` | Vector of `n` random integers in `[lo, hi]` |
+| `exit()` | Terminate the program immediately |
 | `graph(n)` | Create adjacency list with `n` empty vectors |
 | `graph(n, m)` | Read `m` undirected edges from stdin, build adjacency list |
 | `dgraph(n, m)` | Read `m` directed edges from stdin |

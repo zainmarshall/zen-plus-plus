@@ -8,14 +8,14 @@ fn solve() {
     x--
     y--
 
+    vals = read(n)
     a = []
     b = []
     for i n {
-        j = read()
         if i <= x || i > y {
-            push(a, j)
+            push(a, vals[i])
         } else {
-            push(b, j)
+            push(b, vals[i])
         }
     }
 
@@ -26,10 +26,7 @@ fn solve() {
             if b[i] < b[mi] { mi = i }
         }
         // rotate so min is first
-        nb = []
-        for i mi len(b) { push(nb, b[i]) }
-        for i mi { push(nb, b[i]) }
-        b = nb
+        b = b[mi:len(b)] + b[0:mi]
     }
 
     m = -1
@@ -45,10 +42,7 @@ fn solve() {
     }
 
     // build result: a[:pos] + b + a[pos:]
-    res = []
-    for i pos { push(res, a[i]) }
-    for i len(b) { push(res, b[i]) }
-    for i pos len(a) { push(res, a[i]) }
+    res = a[0:pos] + b + a[pos:len(a)]
     for i len(res) {
         if i > 0 { print(" ") }
         print(res[i])

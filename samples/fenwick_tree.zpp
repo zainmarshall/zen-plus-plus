@@ -1,0 +1,16 @@
+// Fenwick Tree — point update + range sum queries in O(log n)
+import std
+
+ft = FenwickTree()
+ft.init(8)
+
+vals = [3, 2, 5, 1, 4, 7, 6, 8]
+for i len(vals) {
+    ft.update(i, vals[i])
+}
+
+println(ft.query(3))          // prefix sum [0..3] = 11
+println(ft.rangeQuery(2, 5))  // sum [2..5] = 17
+
+ft.update(2, 3)               // add 3 to index 2
+println(ft.rangeQuery(2, 5))  // now 20

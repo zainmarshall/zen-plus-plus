@@ -48,7 +48,7 @@ function highlight(text) {
   // This avoids the bug where escapeHtml turns > into &gt; and
   // then the regex breaks the entity by matching & as an operator.
   const tokenRegex =
-    /\/\/.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)\b|\b(?:read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|lcm|mid|ckmin|ckmax|prefix|binarySearch|dijkstra|ord|chr|parseInt|str|int|float|sort|sortdec|reverse|split|join|find|count|swap|fill|sum|lowerBound|upperBound|modpow|bfs|graph|dgraph|wgraph|dwgraph)\b|\b\d+(?:\.\d+)?\b|\?|:|(\*\*)|==|!=|<=|>=|&&|\|\||[+*/%<>=^|&!\-]/g;
+    /\/\/.*|\/\*[\s\S]*?\*\/|f"(?:\\.|[^"\\])*"|"(?:\\.|[^"\\])*"|\b(?:fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)\b|\b(?:read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|lcm|mid|ckmin|ckmax|prefix|binarySearch|dijkstra|ord|chr|parseInt|str|int|float|sort|sortdec|sorted|reverse|unique|flatten|zip|split|join|find|count|swap|fill|sum|lowerBound|upperBound|modpow|bfs|graph|dgraph|wgraph|dwgraph|replace|upper|lower|trim|contains|startswith|endswith|substr|all|any|rand|randvec|exit)\b|\b\d+(?:\.\d+)?\b|~|<<|>>|\?|:|(\*\*)|==|!=|<=|>=|&&|\|\||[+*/%<>=^|&!\-]/g;
 
   let result = "";
   let lastIndex = 0;
@@ -62,13 +62,38 @@ function highlight(text) {
     const esc = escapeHtml(tok);
     if (tok.startsWith("//") || tok.startsWith("/*")) {
       result += `<span class="token-comment">${esc}</span>`;
+    } else if (tok.startsWith("f\"")) {
+      // f-string: highlight the f and quotes as string, expressions inside {} as normal
+      let fstr = '<span class="token-string">f"</span>';
+      const inner = tok.slice(2, -1); // strip f" and "
+      let fi = 0;
+      while (fi < inner.length) {
+        if (inner[fi] === '{') {
+          let depth = 1, fj = fi + 1;
+          while (fj < inner.length && depth > 0) {
+            if (inner[fj] === '{') depth++;
+            else if (inner[fj] === '}') depth--;
+            fj++;
+          }
+          const expr = inner.slice(fi + 1, fj - 1);
+          fstr += '<span class="token-string">{</span>' + escapeHtml(expr) + '<span class="token-string">}</span>';
+          fi = fj;
+        } else {
+          let fj = fi;
+          while (fj < inner.length && inner[fj] !== '{') fj++;
+          fstr += '<span class="token-string">' + escapeHtml(inner.slice(fi, fj)) + '</span>';
+          fi = fj;
+        }
+      }
+      fstr += '<span class="token-string">"</span>';
+      result += fstr;
     } else if (tok.startsWith("\"")) {
       result += `<span class="token-string">${esc}</span>`;
     } else if (/^\d/.test(tok)) {
       result += `<span class="token-number">${esc}</span>`;
     } else if (/^(fn|if|else|while|for|return|true|false|struct|import|map|set|self|break|continue|in)$/.test(tok)) {
       result += `<span class="token-keyword">${esc}</span>`;
-    } else if (/^(read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|lcm|mid|ckmin|ckmax|prefix|binarySearch|dijkstra|ord|chr|parseInt|str|int|float|sort|sortdec|reverse|split|join|find|count|swap|fill|sum|lowerBound|upperBound|modpow|bfs|graph|dgraph|wgraph|dwgraph)$/.test(tok)) {
+    } else if (/^(read|readInt|readFloat|readLine|len|push|pop|print|println|min|max|abs|gcd|lcm|mid|ckmin|ckmax|prefix|binarySearch|dijkstra|ord|chr|parseInt|str|int|float|sort|sortdec|sorted|reverse|unique|flatten|zip|split|join|find|count|swap|fill|sum|lowerBound|upperBound|modpow|bfs|graph|dgraph|wgraph|dwgraph|replace|upper|lower|trim|contains|startswith|endswith|substr|all|any|rand|randvec|exit)$/.test(tok)) {
       result += `<span class="token-builtin">${esc}</span>`;
     } else {
       result += `<span class="token-operator">${esc}</span>`;
@@ -199,62 +224,95 @@ const AC_KEYWORDS = [
   { text: "self", kind: "keyword" },
   { text: "break", kind: "keyword" },
   { text: "continue", kind: "keyword" },
-  // Built-in functions
-  { text: "print()", kind: "builtin", cursor: -1 },
-  { text: "println()", kind: "builtin", cursor: -1 },
-  { text: "read()", kind: "builtin" },
-  { text: "readInt()", kind: "builtin" },
-  { text: "readFloat()", kind: "builtin" },
-  { text: "readLine()", kind: "builtin" },
-  { text: "len()", kind: "builtin", cursor: -1 },
-  { text: "push()", kind: "builtin", cursor: -1 },
-  { text: "pop()", kind: "builtin", cursor: -1 },
-  { text: "ord()", kind: "builtin", cursor: -1 },
-  { text: "chr()", kind: "builtin", cursor: -1 },
-  { text: "parseInt()", kind: "builtin", cursor: -1 },
-  { text: "str()", kind: "builtin", cursor: -1 },
-  { text: "int()", kind: "builtin", cursor: -1 },
-  { text: "float()", kind: "builtin", cursor: -1 },
-  { text: "sort()", kind: "builtin", cursor: -1 },
-  { text: "sortdec()", kind: "builtin", cursor: -1 },
-  { text: "reverse()", kind: "builtin", cursor: -1 },
-  { text: "split()", kind: "builtin", cursor: -1 },
-  { text: "join()", kind: "builtin", cursor: -1 },
-  { text: "find()", kind: "builtin", cursor: -1 },
-  { text: "count()", kind: "builtin", cursor: -1 },
-  { text: "swap()", kind: "builtin", cursor: -1 },
-  { text: "fill()", kind: "builtin", cursor: -1 },
-  { text: "graph()", kind: "builtin", cursor: -1 },
-  { text: "dgraph()", kind: "builtin", cursor: -1 },
-  { text: "wgraph()", kind: "builtin", cursor: -1 },
-  { text: "dwgraph()", kind: "builtin", cursor: -1 },
+  { text: "in", kind: "keyword" },
+  // I/O
+  { text: "print(...)", kind: "builtin", hint: "print values, no newline", cursor: -4 },
+  { text: "println(...)", kind: "builtin", hint: "print values + newline", cursor: -4 },
+  { text: "read()", kind: "builtin", hint: "read int from stdin" },
+  { text: "read(n)", kind: "builtin", hint: "read n ints into vector", cursor: -1 },
+  { text: "readLine()", kind: "builtin", hint: "read line as string" },
+  { text: "readFloat()", kind: "builtin", hint: "read float from stdin" },
+  // Collections
+  { text: "len(x)", kind: "builtin", hint: "length of string/vector", cursor: -1 },
+  { text: "push(v, x)", kind: "builtin", hint: "append x to vector v", cursor: -4 },
+  { text: "pop(v)", kind: "builtin", hint: "remove & return last element", cursor: -1 },
+  { text: "sort(v)", kind: "builtin", hint: "sort vector ascending", cursor: -1 },
+  { text: "sort(v, fn(a,b){...})", kind: "builtin", hint: "sort with comparator", cursor: -16 },
+  { text: "sortdec(v)", kind: "builtin", hint: "sort vector descending", cursor: -1 },
+  { text: "sorted(v)", kind: "builtin", hint: "return sorted copy", cursor: -1 },
+  { text: "reverse(v)", kind: "builtin", hint: "reverse in-place", cursor: -1 },
+  { text: "unique(v)", kind: "builtin", hint: "remove consecutive dupes", cursor: -1 },
+  { text: "fill(n, val)", kind: "builtin", hint: "vector of n copies", cursor: -5 },
+  { text: "fill(n, m, val)", kind: "builtin", hint: "n×m grid", cursor: -5 },
+  { text: "flatten(v)", kind: "builtin", hint: "flatten one level", cursor: -1 },
+  { text: "zip(a, b)", kind: "builtin", hint: "pair up two vectors", cursor: -4 },
+  { text: "find(v, x)", kind: "builtin", hint: "first index of x, -1 if missing", cursor: -4 },
+  { text: "count(v, x)", kind: "builtin", hint: "count occurrences", cursor: -4 },
+  { text: "swap(v, i, j)", kind: "builtin", hint: "swap elements at i,j", cursor: -5 },
+  // Strings
+  { text: "split(s, delim)", kind: "builtin", hint: "split string by delimiter", cursor: -7 },
+  { text: "join(v, delim)", kind: "builtin", hint: "join vector into string", cursor: -7 },
+  { text: "replace(s, old, new)", kind: "builtin", hint: "replace all occurrences", cursor: -10 },
+  { text: "upper(s)", kind: "builtin", hint: "uppercase string", cursor: -1 },
+  { text: "lower(s)", kind: "builtin", hint: "lowercase string", cursor: -1 },
+  { text: "trim(s)", kind: "builtin", hint: "strip whitespace", cursor: -1 },
+  { text: "contains(s, sub)", kind: "builtin", hint: "check substring", cursor: -5 },
+  { text: "startswith(s, pre)", kind: "builtin", hint: "check prefix", cursor: -5 },
+  { text: "endswith(s, suf)", kind: "builtin", hint: "check suffix", cursor: -5 },
+  { text: "substr(s, start)", kind: "builtin", hint: "substring from start", cursor: -7 },
+  { text: "substr(s, start, len)", kind: "builtin", hint: "substring with length", cursor: -11 },
+  // Type casting
+  { text: "str(x)", kind: "builtin", hint: "convert to string", cursor: -1 },
+  { text: "int(x)", kind: "builtin", hint: "convert to integer", cursor: -1 },
+  { text: "float(x)", kind: "builtin", hint: "convert to float", cursor: -1 },
+  { text: "ord(s)", kind: "builtin", hint: "ASCII code of char", cursor: -1 },
+  { text: "chr(n)", kind: "builtin", hint: "char from ASCII code", cursor: -1 },
+  // Predicates
+  { text: "all(v, fn(x){...})", kind: "builtin", hint: "true if all pass", cursor: -13 },
+  { text: "any(v, fn(x){...})", kind: "builtin", hint: "true if any passes", cursor: -13 },
+  { text: "min(v)", kind: "builtin", hint: "min of vector", cursor: -1 },
+  { text: "max(v)", kind: "builtin", hint: "max of vector", cursor: -1 },
+  // Random
+  { text: "rand(lo, hi)", kind: "builtin", hint: "random int in [lo,hi]", cursor: -5 },
+  { text: "randvec(n, lo, hi)", kind: "builtin", hint: "vector of n random ints", cursor: -8 },
+  { text: "exit()", kind: "builtin", hint: "terminate program" },
+  // Graphs
+  { text: "graph(n)", kind: "builtin", hint: "empty adjacency list", cursor: -1 },
+  { text: "graph(n, m)", kind: "builtin", hint: "read m undirected edges", cursor: -4 },
+  { text: "wgraph(n, m)", kind: "builtin", hint: "read m weighted edges", cursor: -4 },
+  { text: "dgraph(n, m)", kind: "builtin", hint: "read m directed edges", cursor: -4 },
+  { text: "dwgraph(n, m)", kind: "builtin", hint: "read m directed weighted", cursor: -4 },
   // Stdlib math (import std)
-  { text: "min()", kind: "stdlib", cursor: -1 },
-  { text: "max()", kind: "stdlib", cursor: -1 },
-  { text: "abs()", kind: "stdlib", cursor: -1 },
-  { text: "gcd()", kind: "stdlib", cursor: -1 },
-  { text: "lcm()", kind: "stdlib", cursor: -1 },
-  { text: "mid()", kind: "stdlib", cursor: -1 },
-  { text: "ckmin()", kind: "stdlib", cursor: -1 },
-  { text: "ckmax()", kind: "stdlib", cursor: -1 },
-  { text: "prefix()", kind: "stdlib", cursor: -1 },
-  { text: "binarySearch()", kind: "stdlib", cursor: -1 },
-  { text: "dijkstra()", kind: "stdlib", cursor: -1 },
-  { text: "sum()", kind: "stdlib", cursor: -1 },
-  { text: "lowerBound()", kind: "stdlib", cursor: -1 },
-  { text: "upperBound()", kind: "stdlib", cursor: -1 },
-  { text: "modpow()", kind: "stdlib", cursor: -1 },
-  { text: "bfs()", kind: "stdlib", cursor: -1 },
+  { text: "min(a, b)", kind: "stdlib", hint: "smaller of two values", cursor: -4 },
+  { text: "max(a, b)", kind: "stdlib", hint: "larger of two values", cursor: -4 },
+  { text: "abs(x)", kind: "stdlib", hint: "absolute value", cursor: -1 },
+  { text: "gcd(a, b)", kind: "stdlib", hint: "greatest common divisor", cursor: -4 },
+  { text: "lcm(a, b)", kind: "stdlib", hint: "least common multiple", cursor: -4 },
+  { text: "modpow(base, exp, mod)", kind: "stdlib", hint: "modular exponentiation", cursor: -10 },
+  { text: "prefix(v)", kind: "stdlib", hint: "prefix sum array", cursor: -1 },
+  { text: "sum(v)", kind: "stdlib", hint: "sum of vector", cursor: -1 },
+  { text: "binarySearch(v, target)", kind: "stdlib", hint: "returns index or -1", cursor: -8 },
+  { text: "lowerBound(v, x)", kind: "stdlib", hint: "first index >= x", cursor: -4 },
+  { text: "upperBound(v, x)", kind: "stdlib", hint: "first index > x", cursor: -4 },
+  { text: "dijkstra(adj, start)", kind: "stdlib", hint: "shortest paths", cursor: -7 },
+  { text: "bfs(adj, start)", kind: "stdlib", hint: "unweighted shortest paths", cursor: -7 },
   // Stdlib data structures (import std)
-  { text: "Stack()", kind: "stdlib" },
-  { text: "Queue()", kind: "stdlib" },
-  { text: "DSU()", kind: "stdlib" },
-  { text: "PriorityQueue()", kind: "stdlib" },
-  { text: "MinPriorityQueue()", kind: "stdlib" },
-  { text: "Pair()", kind: "stdlib" },
-  { text: "Tuple()", kind: "stdlib" },
+  { text: "Stack()", kind: "stdlib", hint: "LIFO stack" },
+  { text: "Queue()", kind: "stdlib", hint: "FIFO queue" },
+  { text: "DSU()", kind: "stdlib", hint: "disjoint set union" },
+  { text: "PriorityQueue()", kind: "stdlib", hint: "max-heap" },
+  { text: "MinPriorityQueue()", kind: "stdlib", hint: "min-heap" },
+  { text: "FenwickTree()", kind: "stdlib", hint: "point update + prefix sum" },
+  { text: "SegTree()", kind: "stdlib", hint: "range query + point update" },
+  { text: "Pair()", kind: "stdlib", hint: "pair of values" },
+  { text: "Tuple()", kind: "stdlib", hint: "tuple of values" },
   // Snippets
   { text: "import std", kind: "snippet" },
+  { text: "fn name() {\n    \n}", kind: "snippet", hint: "function definition", cursor: -2 },
+  { text: "for i n {\n    \n}", kind: "snippet", hint: "for loop", cursor: -2 },
+  { text: "while cond {\n    \n}", kind: "snippet", hint: "while loop", cursor: -2 },
+  { text: "if cond {\n    \n}", kind: "snippet", hint: "if block", cursor: -2 },
+  { text: "struct Name {\n    fn init() {\n        \n    }\n}", kind: "snippet", hint: "struct definition", cursor: -6 },
 ];
 
 let acActive = false;
@@ -307,7 +365,7 @@ function showAc(matches, prefix) {
   acActive = true;
 
   acEl.innerHTML = matches
-    .map((m, i) => `<div class="ac-item${i === 0 ? " active" : ""}" data-i="${i}"><span>${escapeHtml(m.text)}</span><span class="ac-kind">${m.kind}</span></div>`)
+    .map((m, i) => `<div class="ac-item${i === 0 ? " active" : ""}" data-i="${i}"><span>${escapeHtml(m.text)}</span><span class="ac-kind${m.hint ? " has-hint" : ""}">${m.hint || m.kind}</span></div>`)
     .join("");
   acEl.classList.add("visible");
 
@@ -343,7 +401,15 @@ sourceEl.addEventListener("input", () => {
   const word = getWordBefore(sourceEl.value, sourceEl.selectionStart);
   if (word.length >= 2) {
     const lower = word.toLowerCase();
-    const matches = AC_KEYWORDS.filter((k) => k.text.toLowerCase().startsWith(lower) && k.text.toLowerCase() !== lower).slice(0, 7);
+    // Match on function name (before first paren/space), deduplicate by name
+    const seen = new Set();
+    const matches = AC_KEYWORDS.filter((k) => {
+      const name = k.text.split(/[(\s]/)[0].toLowerCase();
+      if (!name.startsWith(lower) || name === lower) return false;
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    }).slice(0, 8);
     if (matches.length > 0) {
       showAc(matches, word);
       return;
@@ -505,8 +571,8 @@ fn binary_search(v, target) {
 }
 
 arr = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]
-println(binary_search(arr, 23))
-println(binary_search(arr, 10))`,
+println(binary_search(arr, 23))    // 5
+println(binary_search(arr, 10))    // -1`,
     input: "",
   },
   {
@@ -573,7 +639,7 @@ for key in m {
     name: "Maps, Sets & Structs",
     code: `// Map and set bracket indexing
 
-// word frequency with maps
+// map bracket syntax
 freq = map()
 words = ["the", "cat", "sat", "on", "the", "mat", "the"]
 for w in words {
@@ -584,7 +650,7 @@ println("the: " + freq["the"])
 println("cat: " + freq["cat"])
 println("mat: " + freq["mat"])
 
-// set membership
+// set bracket syntax for membership
 seen = set()
 seen.add(10)
 seen.add(20)
@@ -593,7 +659,7 @@ seen.add(30)
 println(seen[10])    // 1
 println(seen[99])    // 0
 
-// struct with field defaults
+// struct field defaults
 struct Counter {
     count = 0
 
@@ -611,6 +677,242 @@ c.inc()
 c.inc()
 println(c.get())     // 3`,
     input: "",
+  },
+  {
+    name: "Slicing",
+    code: `// Slicing — Python-style slicing for vectors and strings
+
+v = [10, 20, 30, 40, 50]
+println(v[1:3])     // [20, 30]
+println(v[:2])      // [10, 20]
+println(v[3:])      // [40, 50]
+println(v[::-1])    // [50, 40, 30, 20, 10]
+
+s = "hello world"
+println(s[0:5])     // hello
+println(s[::-1])    // dlrow olleh`,
+    input: "",
+  },
+  {
+    name: "F-Strings",
+    code: `// F-strings — string interpolation with expressions
+
+name = "Zen++"
+version = 1
+println(f"{name} v0.{version}.0")
+
+a, b = 10, 3
+println(f"{a} / {b} = {a / b} remainder {a % b}")
+
+v = [1, 2, 3, 4, 5]
+println(f"sum of {v} = {v[0] + v[1] + v[2] + v[3] + v[4]}")`,
+    input: "",
+  },
+  {
+    name: "Lambdas & Predicates",
+    code: `// Lambda functions — anonymous functions as expressions
+
+// sort by custom comparator
+pairs = [[1, 30], [2, 10], [3, 20]]
+sort(pairs, fn(a, b) { a[1] - b[1] })
+println(pairs)   // [[2, 10], [3, 20], [1, 30]]
+
+// filter with all/any
+v = [2, 4, 6, 8, 10]
+println(all(v, fn(x) { x % 2 == 0 }))   // 1
+println(any(v, fn(x) { x > 9 }))         // 1`,
+    input: "",
+  },
+  {
+    name: "String Methods",
+    code: `// String manipulation functions
+
+// === upper / lower ===
+println(upper("hello world"))    // HELLO WORLD
+println(lower("HELLO WORLD"))    // hello world
+
+// useful for case-insensitive comparison
+a = "Hello"
+b = "hello"
+println(lower(a) == lower(b))    // 1
+
+// === replace ===
+s = "aababca"
+println(replace(s, "a", "x"))    // xxbxbcx
+println(replace(s, "ab", ""))    // aaca
+
+// cleaning up input
+messy = "1, 2, 3, 4"
+clean = replace(messy, " ", "")
+println(clean)                   // 1,2,3,4
+
+// === startswith / endswith ===
+filename = "solution.zpp"
+println(startswith(filename, "solution"))  // 1
+println(endswith(filename, ".zpp"))        // 1
+println(endswith(filename, ".cpp"))        // 0
+
+// === contains ===
+line = "the quick brown fox"
+println(contains(line, "brown"))  // 1
+println(contains(line, "red"))    // 0
+
+// === trim ===
+raw = "   hello   "
+println(trim(raw))               // hello
+println(len(trim(raw)))          // 5
+
+// === substr ===
+s = "hello world"
+println(substr(s, 6))            // world
+println(substr(s, 0, 5))         // hello
+
+// negative start index counts from end
+println(substr(s, -5))           // world
+println(substr(s, -5, 3))        // wor
+
+// === slicing (also works on strings) ===
+s = "abcdefgh"
+println(s[0:3])                  // abc
+println(s[3:])                   // defgh
+println(s[:4])                   // abcd
+println(s[::2])                  // aceg
+println(s[::-1])                 // hgfedcba
+
+// === combining them ===
+// check if a string is a palindrome
+fn isPalindrome(s) {
+    s = lower(s)
+    return s == s[::-1]
+}
+println(isPalindrome("racecar"))  // 1
+println(isPalindrome("hello"))    // 0
+println(isPalindrome("Madam"))    // 1
+
+// iterate over characters in a string
+fn countVowels(s) {
+    s = lower(s)
+    cnt = 0
+    for c in s {
+        if contains("aeiou", c) { cnt++ }
+    }
+    return cnt
+}
+println(countVowels("Hello World"))  // 3
+
+// character frequency
+freq = map()
+for c in "abracadabra" {
+    freq[c] = freq[c] + 1
+}
+println(freq)`,
+    input: "",
+  },
+  {
+    name: "Bitwise Operations",
+    code: `// Bitwise operations
+
+// === shift operators ===
+println(1 << 0)     // 1
+println(1 << 10)    // 1024
+println(1 << 20)    // 1048576
+println(1024 >> 3)  // 128
+println(255 >> 4)   // 15
+
+// === compound shift assignments ===
+x = 1
+x <<= 8
+println(x)          // 256
+x >>= 3
+println(x)          // 32
+
+// === common bitmask patterns ===
+
+// check if i-th bit is set
+fn getBit(n, i) {
+    return (n >> i) & 1
+}
+println(getBit(13, 0))   // 1 (13 = 1101)
+println(getBit(13, 1))   // 0
+println(getBit(13, 2))   // 1
+println(getBit(13, 3))   // 1
+
+// set the i-th bit
+fn setBit(n, i) {
+    return n | (1 << i)
+}
+println(setBit(0, 3))    // 8
+
+// clear the i-th bit (XOR trick since there's no bitwise NOT)
+fn clearBit(n, i) {
+    return n ^ (n & (1 << i))
+}
+
+// toggle the i-th bit
+fn toggleBit(n, i) {
+    return n ^ (1 << i)
+}
+println(toggleBit(13, 1))  // 15 (1101 -> 1111)
+println(toggleBit(15, 2))  // 11 (1111 -> 1011)
+
+// count set bits (popcount)
+fn popcount(n) {
+    cnt = 0
+    while n > 0 {
+        cnt += n & 1
+        n >>= 1
+    }
+    return cnt
+}
+println(popcount(13))     // 3 (1101)
+println(popcount(255))    // 8
+println(popcount(1024))   // 1
+
+// === bitmask subset enumeration ===
+// enumerate all subsets of a 3-bit mask
+mask = 7   // 111 in binary
+sub = mask
+while sub > 0 {
+    print(sub, "")
+    sub = (sub - 1) & mask
+}
+println()
+// prints: 7 6 5 4 3 2 1
+
+// === check power of 2 ===
+fn isPow2(n) {
+    return n > 0 && (n & (n - 1)) == 0
+}
+println(isPow2(16))   // 1
+println(isPow2(15))   // 0
+println(isPow2(1))    // 1
+
+// === bitwise AND/OR/XOR (already existed, shown for completeness) ===
+println(12 & 10)    // 8  (1100 & 1010 = 1000)
+println(12 | 10)    // 14 (1100 | 1010 = 1110)
+println(12 ^ 10)    // 6  (1100 ^ 1010 = 0110)`,
+    input: "",
+  },
+  {
+    name: "Bulk I/O & Casting",
+    code: `// Bulk I/O and type casting demo
+// read(n) reads n values into a vector at once
+
+n = read()
+v = read(n)
+println(v)
+
+// type casting
+x = 42
+println(str(x) + " is a string now")
+
+s = "123"
+println(int(s) + 1)
+
+f = 3.7
+println(int(f))
+println(float(10) + 0.5)`,
+    input: "5\n10 20 30 40 50",
   },
   {
     name: "DSU (Union-Find)",
@@ -633,74 +935,114 @@ println(d.same(0, 4))   // 0`,
     input: "",
   },
   {
-    name: "GCD & Math (stdlib)",
-    code: `// Standard library math functions
+    name: "Fenwick Tree",
+    code: `// Fenwick Tree — point update + range sum queries in O(log n)
 import std
 
-println(gcd(12, 18))     // 6
-println(gcd(100, 75))    // 25
-println(min(3, 7))       // 3
-println(max(3, 7))       // 7
-println(abs(-42))        // 42
+ft = FenwickTree()
+ft.init(8)
 
-// Euclidean algorithm by hand
-fn my_gcd(a, b) {
-    while b != 0 {
-        t = a % b
-        a = b
-        b = t
-    }
-    return a
+vals = [3, 2, 5, 1, 4, 7, 6, 8]
+for i len(vals) {
+    ft.update(i, vals[i])
 }
 
-println(my_gcd(48, 18))  // 6`,
+println(ft.query(3))          // prefix sum [0..3] = 11
+println(ft.rangeQuery(2, 5))  // sum [2..5] = 17
+
+ft.update(2, 3)               // add 3 to index 2
+println(ft.rangeQuery(2, 5))  // now 20`,
     input: "",
   },
   {
-    name: "Stack & Queue (stdlib)",
-    code: `// Stack and Queue from stdlib
+    name: "Segment Tree",
+    code: `// Segment Tree — range sum queries + point updates in O(log n)
 import std
 
-// Stack: LIFO
-s = Stack()
-s.init()
-s.push(10)
-s.push(20)
-s.push(30)
-println("Stack size: " + s.size())
-println("Top: " + s.peek())
-println("Pop: " + s.pop())
-println("Pop: " + s.pop())
+arr = [1, 3, 5, 7, 9, 11]
+st = SegTree()
+st.build(arr)
 
-// Queue: FIFO
+println(st.query(0, 5))   // sum of all = 36
+println(st.query(1, 3))   // 3+5+7 = 15
+
+st.update(2, 10)          // set index 2 to 10
+println(st.query(1, 3))   // 3+10+7 = 20`,
+    input: "",
+  },
+  {
+    name: "Prefix Sums",
+    code: `// Prefix sum — answer range sum queries in O(1)
+import std
+
+n = read()
+q = read()
+a = read(n)
+
+p = prefix(a)
+
+// answer q range sum queries [l, r]
+for i q {
+    l = read()
+    r = read()
+    println(p[r + 1] - p[l])
+}`,
+    input: "5 3\n1 2 3 4 5\n0 4\n1 3\n2 2",
+  },
+  {
+    name: "BFS",
+    code: `// BFS traversal of an undirected graph
+import std
+
+n, m = read(), read()
+adj = graph(n, m)
+
+visited = fill(n, 0)
+visited[0] = 1
+
 q = Queue()
 q.init()
-q.push(1)
-q.push(2)
-q.push(3)
-println("Queue pop: " + q.pop())
-println("Queue pop: " + q.pop())
-println("Queue pop: " + q.pop())`,
-    input: "",
+q.push(0)
+
+while q.size() > 0 {
+    node = q.pop()
+    println(node)
+    for neighbor in adj[node] {
+        if visited[neighbor] == 0 {
+            visited[neighbor] = 1
+            q.push(neighbor)
+        }
+    }
+}`,
+    input: "6 7\n0 1\n0 2\n1 3\n2 3\n3 4\n4 5\n2 5",
+  },
+  {
+    name: "Dijkstra",
+    code: `// Dijkstra's shortest path demo
+import std
+
+n, m = read(), read()
+adj = wgraph(n, m)
+dist = dijkstra(adj, 0)
+println(dist)`,
+    input: "4 5\n0 1 4\n0 2 1\n2 1 2\n1 3 1\n2 3 5",
   },
   {
     name: "CF 2200A — Eating Game",
     code: `// Codeforces 2200A - Eating Game
-// Simulate circular eating for each starting player
+// Simulate circular eating for each starting player, count distinct winners
 import std
 
 fn solve() {
     n = read()
-    a = []
-    for i n { push(a, read()) }
+    a = read(n)
 
     winners = set()
     for s n {
-        b = []
-        for i n { push(b, a[i]) }
+        b = a[0:n]
 
         total = 0
-        for i n { total += b[i] }
+        for x in b { total += x }
 
         last = 0
         cur = s
@@ -723,22 +1065,21 @@ while t-- { solve() }`,
   },
   {
     name: "CF 2200B — Deletion Sort",
-    code: `// Codeforces 2200B - Deletion Sort
+    code: `// Codeforces 1084B - Deletion Sort
 // If already sorted, answer is n; otherwise 1
 
 fn solve() {
     n = read()
-    a = []
-    for i n { push(a, read()) }
+    a = read(n)
 
-    sorted = 1
+    is_sorted = 1
     for i 1 n {
         if a[i] < a[i - 1] {
-            sorted = 0
+            is_sorted = 0
             break
         }
     }
-    if sorted { println(n) } else { println(1) }
+    if is_sorted { println(n) } else { println(1) }
 }
 
 t = read()
@@ -747,8 +1088,8 @@ while t-- { solve() }`,
   },
   {
     name: "CF 2200C — Specialty String",
-    code: `// Codeforces 2200C - Specialty String
-// Stack-based: cancel adjacent equal chars
+    code: `// Codeforces 1084C - Specialty String
+// Stack-based: cancel adjacent equal chars, check if empty
 import std
 
 fn solve() {
@@ -757,8 +1098,7 @@ fn solve() {
 
     st = Stack()
     st.init()
-    for i len(s) {
-        c = s[i]
+    for c in s {
         if st.size() > 0 && c == st.peek() {
             st.pop()
         } else {
@@ -774,8 +1114,8 @@ while t-- { solve() }`,
   },
   {
     name: "CF 2200D — Portal",
-    code: `// Codeforces 2200D - Portal
-// Split array, rotate inner segment, merge back
+    code: `// Codeforces 1084D - Portal
+// Split array, rotate inner segment so min is first, merge back
 
 fn solve() {
     n = read()
@@ -784,31 +1124,31 @@ fn solve() {
     x--
     y--
 
+    vals = read(n)
     a = []
     b = []
     for i n {
-        j = read()
         if i <= x || i > y {
-            push(a, j)
+            push(a, vals[i])
         } else {
-            push(b, j)
+            push(b, vals[i])
         }
     }
 
     if len(b) > 0 {
+        // find index of minimum in b
         mi = 0
         for i 1 len(b) {
             if b[i] < b[mi] { mi = i }
         }
-        nb = []
-        for i mi len(b) { push(nb, b[i]) }
-        for i mi { push(nb, b[i]) }
-        b = nb
+        // rotate so min is first
+        b = b[mi:len(b)] + b[0:mi]
     }
 
     m = -1
     if len(b) > 0 { m = b[0] }
 
+    // find insertion point in a
     pos = len(a)
     for i len(a) {
         if a[i] >= m {
@@ -817,10 +1157,8 @@ fn solve() {
         }
     }
 
-    res = []
-    for i pos { push(res, a[i]) }
-    for i len(b) { push(res, b[i]) }
-    for i pos len(a) { push(res, a[i]) }
+    // build result: a[:pos] + b + a[pos:]
+    res = a[0:pos] + b + a[pos:len(a)]
     for i len(res) {
         if i > 0 { print(" ") }
         print(res[i])
@@ -834,7 +1172,7 @@ while t-- { solve() }`,
   },
   {
     name: "CF 2200E — Divisive Battle",
-    code: `// Codeforces 2200E - Divisive Battle
+    code: `// Codeforces 1084E - Divisive Battle
 // Check prime structure to determine Alice vs Bob
 
 fn primebase(x) {
@@ -865,22 +1203,15 @@ fn is_sorted(a) {
 
 fn solve() {
     n = read()
-    a = []
-    for i n { push(a, read()) }
+    a = read(n)
 
     b = []
-    for i n { push(b, primebase(a[i])) }
+    for x in a { push(b, primebase(x)) }
 
     if is_sorted(a) {
         println("Bob")
     } else {
-        has_multi = 0
-        for x in b {
-            if x == -1 {
-                has_multi = 1
-                break
-            }
-        }
+        has_multi = any(b, fn(x) { x == -1 })
         if has_multi {
             println("Alice")
         } else if is_sorted(b) {
@@ -895,364 +1226,15 @@ t = read()
 while t-- { solve() }`,
     input: "4\n10\n10 9 8 7 6 5 4 3 2 1\n3\n1 8192 677\n2\n6 5\n2\n6 7",
   },
-  {
-    name: "Bulk I/O & Casting",
-    code: `// Bulk I/O and type casting
-// read(n) reads n values into a vector at once
-
-n = read()
-v = read(n)
-println(v)
-
-// type casting
-x = 42
-println(str(x) + " is a string now")
-
-s = "123"
-println(int(s) + 1)
-
-f = 3.7
-println(int(f))
-println(float(10) + 0.5)`,
-    input: "5\n10 20 30 40 50",
-  },
-  {
-    name: "Prefix Sums (stdlib)",
-    code: `// Prefix sum — answer range sum queries in O(1)
-import std
-
-n = read()
-q = read()
-a = read(n)
-
-p = prefix(a)
-
-// answer q range sum queries [l, r]
-for i q {
-    l = read()
-    r = read()
-    println(p[r + 1] - p[l])
-}`,
-    input: "5 3\n1 2 3 4 5\n0 4\n1 3\n2 2",
-  },
-  {
-    name: "Dijkstra (stdlib)",
-    code: `// Dijkstra's shortest path
-import std
-
-n, m = read(), read()
-adj = wgraph(n, m)
-dist = dijkstra(adj, 0)
-println(dist)`,
-    input: "4 5\n0 1 4\n0 2 1\n2 1 2\n1 3 1\n2 3 5",
-  },
-  {
-    name: "String Methods",
-    code: `// String manipulation functions
-
-// case conversion
-println(upper("hello world"))    // HELLO WORLD
-println(lower("HELLO WORLD"))    // hello world
-
-// replace all occurrences
-s = "aababca"
-println(replace(s, "a", "x"))    // xxbxbcx
-println(replace(s, "ab", ""))    // aaca
-
-// prefix/suffix checks
-filename = "solution.zpp"
-println(startswith(filename, "solution"))  // 1
-println(endswith(filename, ".zpp"))        // 1
-
-// contains
-line = "the quick brown fox"
-println(contains(line, "brown"))  // 1
-
-// trim whitespace
-println(trim("   hello   "))     // hello
-
-// substring (supports negative index)
-s = "hello world"
-println(substr(s, 6))            // world
-println(substr(s, 0, 5))         // hello
-println(substr(s, -5))           // world
-
-// slicing works on strings too
-s = "abcdefgh"
-println(s[0:3])                  // abc
-println(s[::-1])                 // hgfedcba
-
-// palindrome check using slicing + lower
-fn isPalindrome(s) {
-    s = lower(s)
-    return s == s[::-1]
-}
-println(isPalindrome("racecar"))  // 1
-println(isPalindrome("Madam"))    // 1
-println(isPalindrome("hello"))    // 0`,
-    input: "",
-  },
-  {
-    name: "Bitwise Operations",
-    code: `// Bitwise shift operators and common patterns
-
-// shift operators
-println(1 << 10)    // 1024
-println(1024 >> 3)  // 128
-
-// compound shift assignment
-x = 1
-x <<= 8
-println(x)          // 256
-x >>= 3
-println(x)          // 32
-
-// check if i-th bit is set
-fn getBit(n, i) {
-    return (n >> i) & 1
-}
-println(getBit(13, 0))   // 1 (13 = 1101)
-println(getBit(13, 1))   // 0
-println(getBit(13, 2))   // 1
-
-// set the i-th bit
-fn setBit(n, i) {
-    return n | (1 << i)
-}
-println(setBit(0, 3))    // 8
-
-// toggle the i-th bit
-fn toggleBit(n, i) {
-    return n ^ (1 << i)
-}
-println(toggleBit(13, 1))  // 15 (1101 -> 1111)
-
-// popcount (count set bits)
-fn popcount(n) {
-    cnt = 0
-    while n > 0 {
-        cnt = cnt + (n & 1)
-        n >>= 1
-    }
-    return cnt
-}
-println(popcount(13))     // 3 (1101)
-println(popcount(255))    // 8
-
-// check power of 2
-fn isPow2(n) {
-    return n > 0 && (n & (n - 1)) == 0
-}
-println(isPow2(16))   // 1
-println(isPow2(15))   // 0`,
-    input: "",
-  },
-  {
-    name: "Sorting & Lambdas",
-    code: `// Sorting with inline lambda comparators
-
-// basic sort
-v = [5, 3, 1, 4, 2]
-sort(v)
-println(v)   // [1, 2, 3, 4, 5]
-
-// sort descending with lambda
-v = [5, 3, 1, 4, 2]
-sort(v, fn(a, b) { b - a })
-println(v)   // [5, 4, 3, 2, 1]
-
-// sort pairs by second element
-pairs = [[1, 30], [2, 10], [3, 20]]
-sort(pairs, fn(a, b) { a[1] - b[1] })
-println(pairs)   // [[2, 10], [3, 20], [1, 30]]
-
-// sort strings by length
-words = ["banana", "fig", "apple", "kiwi"]
-sort(words, fn(a, b) { len(a) - len(b) })
-println(words)   // [fig, kiwi, apple, banana]
-
-// named comparator still works too
-fn bySecThenFirst(a, b) {
-    if a[1] != b[1] { return a[1] - b[1] }
-    return a[0] - b[0]
-}
-items = [[2, 1], [1, 1], [3, 2]]
-sort(items, bySecThenFirst)
-println(items)   // [[1, 1], [2, 1], [3, 2]]
-
-// slicing for reversed copy (non-destructive)
-v = [1, 2, 3, 4, 5]
-println(v[::-1])   // [5, 4, 3, 2, 1]
-println(v)         // [1, 2, 3, 4, 5] (unchanged)`,
-    input: "",
-  },
-  {
-    name: "Tuple Unpacking & Defaults",
-    code: `// Tuple unpacking in for-each loops
-
-// unpack vector of vectors
-edges = [[1, 2], [3, 4], [5, 6]]
-for u, v in edges {
-    println(u, "->", v)
-}
-
-// unpack key-value pairs from a map
-scores = map()
-scores["alice"] = 95
-scores["bob"] = 87
-scores["charlie"] = 92
-for name, score in scores {
-    println(name + ": " + score)
-}
-
-// skip values with _
-pairs = [[10, 20], [30, 40], [50, 60]]
-for _, second in pairs {
-    println(second)
-}
-
-// default function arguments
-fn greet(name, greeting = "Hello") {
-    println(greeting, name)
-}
-greet("World")          // Hello World
-greet("World", "Hi")    // Hi World
-
-fn power(base, exp = 2) {
-    result = 1
-    for _ exp {
-        result = result * base
-    }
-    return result
-}
-println(power(5))       // 25
-println(power(5, 3))    // 125
-
-// multi-dimensional fill
-grid = fill(3, 4, 0)
-println(grid)
-grid[1][2] = 42
-println(grid[1])   // only row 1 changed
-println(grid[0])   // row 0 still zeros`,
-    input: "",
-  },
-  {
-    name: "Slicing",
-    code: `// Python-style slicing for vectors and strings
-
-v = [10, 20, 30, 40, 50]
-
-// [start:end] — elements from start up to (not including) end
-println(v[1:3])     // [20, 30]
-
-// [:end] — first N elements
-println(v[:2])      // [10, 20]
-
-// [start:] — from start to end
-println(v[3:])      // [40, 50]
-
-// [::step] — every Nth element
-println(v[::2])     // [10, 30, 50]
-
-// [::-1] — reversed copy
-println(v[::-1])    // [50, 40, 30, 20, 10]
-
-// negative indices
-println(v[-2:])     // [40, 50]
-println(v[-3:-1])   // [30, 40]
-
-// strings work the same way
-s = "hello world"
-println(s[0:5])     // hello
-println(s[6:])      // world
-println(s[::-1])    // dlrow olleh
-
-// practical: check palindrome
-word = "racecar"
-println(word == word[::-1])  // 1
-
-// practical: reverse a vector without modifying original
-original = [1, 2, 3, 4, 5]
-reversed = original[::-1]
-println(original)   // [1, 2, 3, 4, 5]
-println(reversed)   // [5, 4, 3, 2, 1]`,
-    input: "",
-  },
-  {
-    name: "F-Strings & Destructuring",
-    code: `// String interpolation with f-strings
-name = "Zen++"
-version = 14
-println(f"Welcome to {name} v{version}!")
-println(f"{1 + 2} + {3 + 4} = {1+2+3+4}")
-
-a = 10
-b = 3
-println(f"{a} / {b} = {a / b} remainder {a % b}")
-
-v = [1, 2, 3]
-println(f"vector {v} has length {len(v)}")
-
-// destructuring assignment
-[x, y, z] = [10, 20, 30]
-println(f"x={x}, y={y}, z={z}")
-
-// discard with _
-[first, _, last] = [100, 200, 300]
-println(f"first={first}, last={last}")
-
-// destructuring from a function
-fn getPoint() {
-    return [3, 4]
-}
-[px, py] = getPoint()
-println(f"point: ({px}, {py})")
-println(f"distance: {(px**2 + py**2)**0.5}")`,
-    input: "",
-  },
-  {
-    name: "Chained Comparisons & Predicates",
-    code: `// Chained comparisons — a < b < c works!
-x = 5
-println(f"x={x}: 1 < x < 10 → {1 < x < 10}")
-println(f"x={x}: 1 < x < 3  → {1 < x < 3}")
-println(f"1 <= 2 <= 3 <= 4  → {1 <= 2 <= 3 <= 4}")
-
-// min/max on vectors (no import std needed)
-v = [3, 1, 4, 1, 5, 9, 2, 6]
-println(f"min={min(v)}, max={max(v)}")
-
-// still works with 2 args
-println(f"min(3,7)={min(3, 7)}")
-
-// all/any predicates with lambdas
-evens = [2, 4, 6, 8]
-println(f"all even? {all(evens, fn(x) { x % 2 == 0 })}")
-println(f"any > 7?  {any(evens, fn(x) { x > 7 })}")
-
-mixed = [1, -2, 3, -4]
-println(f"all positive? {all(mixed, fn(x) { x > 0 })}")
-println(f"any negative? {any(mixed, fn(x) { x < 0 })}")
-
-// bitwise NOT
-println(f"~0 = {~0}")
-println(f"~1 = {~1}")
-
-// clearBit with ~
-fn clearBit(n, i) {
-    return n & ~(1 << i)
-}
-println(f"clearBit(15, 2) = {clearBit(15, 2)}")`,
-    input: "",
-  },
 ];
 
 // Populate dropdown with groups
 const groups = [
   { label: "Basics", items: [0, 1, 2] },
-  { label: "Language Features", items: [3, 4, 13, 16, 17, 18, 19, 20, 21, 22] },
-  { label: "Stdlib (import std)", items: [5, 6, 7, 14, 15] },
-  { label: "Codeforces 2200", items: [8, 9, 10, 11, 12] },
+  { label: "Language Features", items: [3, 4, 5, 6, 7, 8, 9, 10] },
+  { label: "Data Structures", items: [11, 12, 13, 14] },
+  { label: "Graph Algorithms", items: [15, 16] },
+  { label: "Codeforces 2200", items: [17, 18, 19, 20, 21] },
 ];
 
 groups.forEach((g) => {

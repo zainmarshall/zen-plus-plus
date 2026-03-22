@@ -1,26 +1,58 @@
 {
   "name": "zenpp",
   "displayName": "Zen++ Language Support",
-  "description": "Syntax highlighting for the Zen++ programming language",
-  "version": "0.1.0",
+  "description": "Syntax highlighting, f-string support, intellisense, and one-click run for Zen++ (.zpp) - a fast language for competitive programming",
+  "version": "0.2.3",
+  "icon": "icon.png",
   "publisher": "ZainMarshall",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zainmarshall/zen-plus-plus"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.110.0"
   },
   "categories": [
     "Programming Languages"
   ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:zenpp"
+  ],
   "contributes": {
     "languages": [{
       "id": "zenpp",
       "aliases": ["Zen++", "zenpp"],
       "extensions": [".zpp"],
-      "configuration": "./language-configuration.json"
+      "configuration": "./language-configuration.json",
+      "icon": {
+        "light": "./icon.png",
+        "dark": "./icon.png"
+      }
     }],
     "grammars": [{
       "language": "zenpp",
       "scopeName": "source.zenpp",
       "path": "./syntaxes/zenpp.tmLanguage.json"
+    }],
+    "commands": [{
+      "command": "zenpp.run",
+      "title": "Run Zen++ File",
+      "icon": "$(play)"
+    }],
+    "menus": {
+      "editor/title/run": [{
+        "command": "zenpp.run",
+        "when": "resourceLangId == zenpp",
+        "group": "navigation"
+      }]
+    },
+    "keybindings": [{
+      "command": "zenpp.run",
+      "key": "ctrl+enter",
+      "mac": "cmd+enter",
+      "when": "resourceLangId == zenpp"
     }]
   }
 }

@@ -1,0 +1,11 @@
+// Slicing — Python-style slicing for vectors and strings
+
+v = [10, 20, 30, 40, 50]
+println(v[1:3])     // [20, 30]
+println(v[:2])      // [10, 20]
+println(v[3:])      // [40, 50]
+println(v[::-1])    // [50, 40, 30, 20, 10]
+
+s = "hello world"
+println(s[0:5])     // hello
+println(s[::-1])    // dlrow olleh

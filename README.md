@@ -149,25 +149,34 @@ println(p.dist())   // 25
 import std
 ```
 
-**Math:** `min(a,b)` `max(a,b)` `abs(x)` `gcd(a,b)`
+**Math:** `min` `max` `abs` `gcd` `lcm` `modpow` `prefix` `sum`
 
-**Data Structures:** `Stack`, `Queue`, `Map`, `Set`, `DSU`, `PriorityQueue`, `Pair`, `Tuple`
+**Search:** `binarySearch` `lowerBound` `upperBound`
+
+**Graph:** `dijkstra` `bfs` `graph` `wgraph` `dgraph` `dwgraph`
+
+**Data Structures:** `Stack`, `Queue`, `DSU`, `PriorityQueue`, `MinPriorityQueue`, `FenwickTree`, `SegTree`, `Pair`, `Tuple`
 
 ### Built-in Functions
 
 | Function | Description |
 |----------|-------------|
-| `print(...)` | Print values separated by spaces (no newline) |
-| `println(...)` | Print values separated by spaces, with newline |
-| `ord(s)` | ASCII code of first character of string |
-| `chr(n)` | Single-character string from ASCII code |
-| `parseInt(s)` | Parse a string as an integer |
-| `read()` | Read integer from stdin |
-| `readFloat()` | Read float from stdin |
-| `readLine()` | Read line as string from stdin |
+| `print(...)` / `println(...)` | Print values (with/without newline) |
+| `read()` / `read(n)` | Read int(s) from stdin |
+| `readFloat()` / `readLine()` | Read float or line from stdin |
 | `len(x)` | Length of string or vector |
-| `push(v, x)` | Append to vector |
-| `pop(v)` | Remove and return last element |
+| `push(v, x)` / `pop(v)` | Append/remove last element |
+| `sort(v)` / `sorted(v)` | Sort in-place / return sorted copy |
+| `reverse(v)` | Reverse vector or string in-place |
+| `unique(v)` | Remove consecutive duplicates |
+| `find(v, x)` / `count(v, x)` | Find index / count occurrences |
+| `fill(n, val)` | Create vector of n copies |
+| `flatten(v)` / `zip(a, b)` | Flatten nesting / pair up vectors |
+| `rand(lo, hi)` / `randvec(n, lo, hi)` | Random int / random vector |
+| `split(s, d)` / `join(v, d)` | Split/join strings |
+| `str(x)` / `int(x)` / `float(x)` | Type casting |
+| `ord(s)` / `chr(n)` | ASCII conversions |
+| `exit()` | Terminate program |
 
 ## Documentation
 

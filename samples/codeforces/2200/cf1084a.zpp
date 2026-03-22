@@ -4,16 +4,14 @@ import std
 
 fn solve() {
     n = read()
-    a = []
-    for i n { push(a, read()) }
+    a = read(n)
 
     winners = set()
     for s n {
-        b = []
-        for i n { push(b, a[i]) }
+        b = a[0:n]
 
         total = 0
-        for i n { total += b[i] }
+        for x in b { total += x }
 
         last = 0
         cur = s

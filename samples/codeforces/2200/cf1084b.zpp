@@ -3,17 +3,16 @@
 
 fn solve() {
     n = read()
-    a = []
-    for i n { push(a, read()) }
+    a = read(n)
 
-    sorted = 1
+    is_sorted = 1
     for i 1 n {
         if a[i] < a[i - 1] {
-            sorted = 0
+            is_sorted = 0
             break
         }
     }
-    if sorted { println(n) } else { println(1) }
+    if is_sorted { println(n) } else { println(1) }
 }
 
 t = read()

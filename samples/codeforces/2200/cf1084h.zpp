@@ -7,15 +7,7 @@ INF = 4000000000000000000
 save_stack = []
 
 fn sort_vec(v) {
-    for i 1 len(v) {
-        j = i
-        while j > 0 && v[j] < v[j - 1] {
-            tmp = v[j]
-            v[j] = v[j - 1]
-            v[j - 1] = tmp
-            j--
-        }
-    }
+    sort(v)
 }
 
 fn f(a) {
@@ -84,8 +76,7 @@ fn f(a) {
 
 fn solve() {
     n = read()
-    a = []
-    for i n { push(a, read()) }
+    a = read(n)
     sort_vec(a)
     res = f(a)
     if res >= INF { println(-1) } else { println(res) }

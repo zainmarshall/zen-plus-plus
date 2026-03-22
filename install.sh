@@ -6,10 +6,12 @@ BIN_DIR="$PREFIX/bin"
 LIB_DIR="$PREFIX/lib/zenpp"
 
 echo "Building Zen++..."
+rm -rf build
 make build
 
 echo "Installing Zen++ to $PREFIX..."
 sudo mkdir -p "$BIN_DIR" "$LIB_DIR/stdlib"
+sudo rm -f "$BIN_DIR/zenpp"
 sudo cp build/zenpp "$BIN_DIR/zenpp"
 sudo cp stdlib/manifest.txt "$LIB_DIR/stdlib/"
 sudo cp stdlib/*.zpp "$LIB_DIR/stdlib/"

@@ -62,13 +62,20 @@ println(isPalindrome("racecar"))  // 1
 println(isPalindrome("hello"))    // 0
 println(isPalindrome("Madam"))    // 1
 
-// count vowels
+// iterate over characters in a string
 fn countVowels(s) {
     s = lower(s)
     cnt = 0
-    for c in split(s, "") {
+    for c in s {
         if contains("aeiou", c) { cnt++ }
     }
     return cnt
 }
 println(countVowels("Hello World"))  // 3
+
+// character frequency
+freq = map()
+for c in "abracadabra" {
+    freq[c] = freq[c] + 1
+}
+println(freq)
