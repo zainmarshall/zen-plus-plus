@@ -11,7 +11,7 @@ SOURCES := $(SRC_DIR)/main.cpp $(SRC_DIR)/lexer.cpp $(SRC_DIR)/parser.cpp
 DEFAULT_TEST ?= $(TEST_DIR)/test.zpp
 RUN_ARG := $(word 2,$(MAKECMDGOALS))
 
-.PHONY: help build run repl test test-all bench build-web run-web test-web clean
+.PHONY: help build run repl test test-all bench embed-stdlib build-web run-web test-web clean
 
 help:
 	@echo "Available targets:"
@@ -52,7 +52,14 @@ test-all: build
 bench: build
 	@bash $(TEST_DIR)/bench.sh $(TARGET)
 
-build-web:
+embed-stdlib:
+	@echo 'R"STDLIB(' > src/stdlib_embed.inc
+	@cat stdlib/math.zpp >> src/stdlib_embed.inc
+	@echo "" >> src/stdlib_embed.inc
+	@cat stdlib/ds.zpp >> src/stdlib_embed.inc
+	@echo ')STDLIB"' >> src/stdlib_embed.inc
+
+build-web: embed-stdlib
 	@mkdir -p website
 	emcc -std=c++17 -O2 \
 	  src/main.cpp src/lexer.cpp src/parser.cpp \
