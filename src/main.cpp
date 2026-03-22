@@ -264,6 +264,7 @@ Value signalValue; // holds return value when Signal::RETURN
 
 ASTArena globalArena; // arena for all AST nodes — lives for program duration
 std::vector<std::unordered_map<std::string, Value>> scopes(1);
+size_t scopeDepth = 0; // index of current scope (scopes[0..scopeDepth] are live)
 std::unordered_map<std::string, FunctionDef> functions;
 std::unordered_map<std::string, StructDef> structDefs;
 int functionCallDepth = 0;
@@ -295,10 +296,25 @@ std::int64_t checkedMul(std::int64_t a, std::int64_t b, const std::string& conte
     return static_cast<std::int64_t>(result);
 }
 
+// Push a new scope frame, reusing an existing one if available
+inline void pushScope() {
+    scopeDepth++;
+    if (scopeDepth >= scopes.size()) {
+        scopes.emplace_back();
+    } else {
+        scopes[scopeDepth].clear();
+    }
+}
+
+// Pop the current scope frame (just decrements depth — frame stays allocated for reuse)
+inline void popScope() {
+    scopeDepth--;
+}
+
 Value* findVariable(const std::string& name) {
-    for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
-        auto found = it->find(name);
-        if (found != it->end()) {
+    for (size_t i = scopeDepth + 1; i-- > 0;) {
+        auto found = scopes[i].find(name);
+        if (found != scopes[i].end()) {
             return &found->second;
         }
     }
@@ -314,19 +330,20 @@ Value getVariable(const std::string& name) {
 }
 
 void setVariable(const std::string& name, const Value& value) {
-    for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
-        auto found = it->find(name);
-        if (found != it->end()) {
+    for (size_t i = scopeDepth + 1; i-- > 0;) {
+        auto found = scopes[i].find(name);
+        if (found != scopes[i].end()) {
             found->second = value;
             return;
         }
     }
-    scopes.back()[name] = value;
+    scopes[scopeDepth][name] = value;
 }
 
 void resetRuntime() {
     scopes.clear();
-    scopes.push_back({});
+    scopes.emplace_back();
+    scopeDepth = 0;
     functions.clear();
     structDefs.clear();
     functionCallDepth = 0;
@@ -1201,15 +1218,15 @@ Value evaluate(const ASTNode* node) {
             for (size_t i = argValues.size(); i < fn.params.size(); ++i) {
                 argValues.push_back(evaluate(fn.defaults[i]));
             }
-            scopes.push_back({});
-            scopes.back()["self"] = base;
+            pushScope();
+            scopes[scopeDepth]["self"] = base;
             for (size_t i = 0; i < fn.params.size(); ++i) {
-                scopes.back()[fn.params[i]] = argValues[i];
+                scopes[scopeDepth][fn.params[i]] = argValues[i];
             }
             functionCallDepth++;
             Value result = evaluate(fn.body);
             functionCallDepth--;
-            scopes.pop_back();
+            popScope();
             if (currentSignal == Signal::RETURN) {
                 currentSignal = Signal::NONE;
                 return signalValue;
@@ -1354,12 +1371,12 @@ Value evaluate(const ASTNode* node) {
                     if (initRequired > 0) {
                         return objVal;
                     }
-                    scopes.push_back({});
-                    scopes.back()["self"] = objVal;
+                    pushScope();
+                    scopes[scopeDepth]["self"] = objVal;
                     functionCallDepth++;
                     (void)evaluate(initFn.body);
                     functionCallDepth--;
-                    scopes.pop_back();
+                    popScope();
                     if (currentSignal == Signal::RETURN) currentSignal = Signal::NONE;
                 }
                 return objVal;
@@ -1699,13 +1716,13 @@ Value evaluate(const ASTNode* node) {
 
                 // call user comparator: returns the int result
                 auto callUserCmp = [&](const Value& a, const Value& b) -> std::int64_t {
-                    scopes.push_back({});
-                    scopes.back()[userCmp->params[0]] = a;
-                    scopes.back()[userCmp->params[1]] = b;
+                    pushScope();
+                    scopes[scopeDepth][userCmp->params[0]] = a;
+                    scopes[scopeDepth][userCmp->params[1]] = b;
                     functionCallDepth++;
                     Value result = evaluate(userCmp->body);
                     functionCallDepth--;
-                    scopes.pop_back();
+                    popScope();
                     if (currentSignal == Signal::RETURN) {
                         currentSignal = Signal::NONE;
                         result = signalValue;
@@ -2099,12 +2116,12 @@ Value evaluate(const ASTNode* node) {
                 bool isAll = (node->name == "all");
                 const FunctionDef& pred = fit->second;
                 for (const auto& elem : vec) {
-                    scopes.push_back({});
-                    scopes.back()[pred.params[0]] = elem;
+                    pushScope();
+                    scopes[scopeDepth][pred.params[0]] = elem;
                     functionCallDepth++;
                     Value result = evaluate(pred.body);
                     functionCallDepth--;
-                    scopes.pop_back();
+                    popScope();
                     if (currentSignal == Signal::RETURN) {
                         currentSignal = Signal::NONE;
                         result = signalValue;
@@ -2255,14 +2272,14 @@ Value evaluate(const ASTNode* node) {
                 argValues.push_back(evaluate(fn.defaults[i]));
             }
 
-            scopes.push_back({});
+            pushScope();
             for (size_t i = 0; i < fn.params.size(); ++i) {
-                scopes.back()[fn.params[i]] = argValues[i];
+                scopes[scopeDepth][fn.params[i]] = argValues[i];
             }
             functionCallDepth++;
             Value result = evaluate(fn.body);
             functionCallDepth--;
-            scopes.pop_back();
+            popScope();
             if (currentSignal == Signal::RETURN) {
                 currentSignal = Signal::NONE;
                 return signalValue;

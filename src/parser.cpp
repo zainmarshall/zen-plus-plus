@@ -2,6 +2,34 @@
 #include "ASTNode.hpp"
 #include <stdexcept>
 #include <cstdint>
+#include <cmath>
+
+// Constant folding: if both children are INT literals, compute at parse time
+static ASTNode* tryFold(ASTArena* arena, NodeType op, ASTNode* left, ASTNode* right) {
+    if (left->type == NodeType::INT && right->type == NodeType::INT) {
+        std::int64_t a = left->value, b = right->value;
+        switch (op) {
+            case NodeType::ADD: return arena->alloc(a + b);
+            case NodeType::SUB: return arena->alloc(a - b);
+            case NodeType::MUL: return arena->alloc(a * b);
+            case NodeType::DIV:
+                if (b != 0) return arena->alloc(a / b);
+                break;
+            case NodeType::MOD:
+                if (b != 0) return arena->alloc(a % b);
+                break;
+            case NodeType::EXP:
+                if (b >= 0) {
+                    std::int64_t r = 1;
+                    for (std::int64_t i = 0; i < b; i++) r *= a;
+                    return arena->alloc(r);
+                }
+                break;
+            default: break;
+        }
+    }
+    return arena->alloc(op, left, right);
+}
 
 Parser::Parser(const std::vector<Token>& toks) : tokens(toks), pos(0), arena(&ownedArena) {}
 Parser::Parser(const std::vector<Token>& toks, ASTArena* a) : tokens(toks), pos(0), arena(a ? a : &ownedArena) {}
@@ -547,11 +575,11 @@ ASTNode* Parser::parseExpr() {
         Token tok = currentToken();
         if (tok.type == TokenType::PLUS) {
              advance();
-             node = arena->alloc(NodeType::ADD, node, parseTerm());
+             node = tryFold(arena, NodeType::ADD, node, parseTerm());
             }
         else if (tok.type == TokenType::MINUS) {
             advance();
-            node = arena->alloc(NodeType::SUB, node, parseTerm());
+            node = tryFold(arena, NodeType::SUB, node, parseTerm());
         }
         else break;
     }
@@ -562,7 +590,7 @@ ASTNode* Parser::parseExp() {
     ASTNode* node = parsePostfix();
     if (currentToken().type == TokenType::EXP) {
         advance();
-        node = arena->alloc(NodeType::EXP, node, parseExp()); // right-associative
+        node = tryFold(arena, NodeType::EXP, node, parseExp()); // right-associative
     }
     return node;
 }
@@ -571,9 +599,9 @@ ASTNode* Parser::parseTerm() {
     ASTNode* node = parseExp();
     while (true) {
         Token tok = currentToken();
-        if (tok.type == TokenType::STAR) { advance(); node = arena->alloc(NodeType::MUL, node, parseExp()); }
-        else if (tok.type == TokenType::SLASH) { advance(); node = arena->alloc(NodeType::DIV, node, parseExp()); }
-        else if (tok.type == TokenType::MOD) { advance(); node = arena->alloc(NodeType::MOD, node, parseExp()); }
+        if (tok.type == TokenType::STAR) { advance(); node = tryFold(arena, NodeType::MUL, node, parseExp()); }
+        else if (tok.type == TokenType::SLASH) { advance(); node = tryFold(arena, NodeType::DIV, node, parseExp()); }
+        else if (tok.type == TokenType::MOD) { advance(); node = tryFold(arena, NodeType::MOD, node, parseExp()); }
         else break;
     }
     return node;

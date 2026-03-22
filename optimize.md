@@ -153,8 +153,8 @@ Currently the WASM module loads on page open. Move it to load on first "Run" cli
 | # | Optimization | Impact | Effort | Status |
 |---|---|---|---|---|
 | 1 | Exception → flag control flow | Highest | Medium | **Done** — 17x faster function calls |
-| 2 | Pre-allocate scope frames | High | Medium | |
-| 3 | Constant folding | Medium | Easy | |
+| 2 | Pre-allocate scope frames | High | Medium | **Done** — reuse cleared frames instead of alloc/free |
+| 3 | Constant folding | Medium | Easy | **Done** — fold INT arithmetic at parse time |
 | 4 | Arena allocator | Medium | Easy | **Done** — 4096-node block allocator |
 | 5 | WASM size (`-Oz` + compress) | Medium | Easy | |
 | 6 | Lazy WASM loading | Low-Medium | Easy | |
@@ -164,8 +164,8 @@ Currently the WASM module loads on page open. Move it to load on first "Run" cli
 ## Results So Far
 
 Composite benchmark (1M loop + 100K fn calls + 500K var ops + fib(25)):
-- **Before:** 32.53s
-- **After:** 3.35s
-- **Speedup: 9.7x**
+- **Before:** 33.67s
+- **After flags + arena:** 3.39s (9.9x)
+- **After scope frames + constant folding:** 3.05s (11.0x)
 
 Run `make bench` to reproduce.

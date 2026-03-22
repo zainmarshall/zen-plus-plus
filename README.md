@@ -215,26 +215,25 @@ emcc -std=c++17 -O2 \
 
 Zen++ uses several optimization techniques in its interpreter and delivery pipeline. Run `make bench` to reproduce benchmarks.
 
-### Flag-based control flow (replaced C++ exceptions)
+### Flag-based control flow
 
-`return`, `break`, and `continue` originally used C++ `throw`/`catch` for control flow. C++ exceptions are designed for error handling, not regular control flow — they're 100-1000x slower than normal returns due to stack unwinding.
-
-Replaced with a global `Signal` enum. Return/break/continue set a flag; loops and function calls check it after each evaluation. All `try`/`catch` blocks removed from hot paths.
-
-**Result:** Function calls went from 7.05s → 0.41s (**17x faster**). Composite benchmark 32.5s → 3.4s (**9.7x faster**).
+Replaced C++ `throw`/`catch` for `return`/`break`/`continue` with a `Signal` enum. Exceptions are 100-1000x slower than normal returns — this drove a 17x speedup on function calls.
 
 ### Arena allocator for AST nodes
 
-Every AST node was individually heap-allocated with `new`. For a program with thousands of nodes, this means thousands of `malloc`/`free` calls with poor cache locality — nodes scattered across the heap.
+AST nodes allocated from contiguous 4096-node blocks via `ASTArena` instead of individual `new`/`delete`. Better cache locality, fewer malloc calls.
 
-Replaced with `ASTArena`, which allocates nodes from contiguous 4096-node blocks using placement `new`. Reduces allocation calls from ~N to ~N/4096. Nodes are physically adjacent in memory for better CPU cache performance.
+### Scope frame reuse
+
+Function calls reuse pre-allocated `unordered_map` frames instead of allocating/freeing on every call. The cleared frame keeps its bucket array, avoiding repeated allocation.
+
+### Constant folding
+
+Constant integer arithmetic (`1 + 2 + 3`) is evaluated at parse time and replaced with a literal node.
 
 ### Zero external dependencies
 
-The entire project — interpreter, web IDE, build system — has zero external dependencies. No npm packages, no pip packages, no third-party C++ libraries. The interpreter is pure C++17 stdlib. The web IDE is raw HTML/CSS/JS + WASM. This means:
-- No dependency vulnerabilities
-- No supply chain risk
-- Minimal bundle size (468 KB WASM + 110 KB JS/CSS)
+The entire project — interpreter, web IDE, build system — has zero external dependencies. No npm packages, no pip packages, no third-party C++ libraries. The interpreter is pure C++17 stdlib. The web IDE is raw HTML/CSS/JS + WASM.
 
 ### Efficient data structures
 
@@ -245,10 +244,14 @@ The entire project — interpreter, web IDE, build system — has zero external 
 
 ### Benchmarks
 
-| Benchmark | Iterations | Time |
-|---|---|---|
-| Simple loop (`x += 1`) | 1,000,000 | ~1.1s |
-| Function calls (`add(x, 1)`) | 100,000 | ~0.4s |
-| Variable read/write | 500,000 | ~1.1s |
-| Vector push | 100,000 | ~0.2s |
-| Composite (all above + fib(25)) | — | ~3.4s |
+Run `make bench` to reproduce.
+
+| Benchmark | Original | + Flags & Arena | + Scope Reuse & Folding |
+|---|---|---|---|
+| Simple loop (1M) | 1.08s | 1.07s | **0.95s** |
+| Function calls (100K) | 7.53s | 0.39s | **0.36s** |
+| Variable read/write (500K) | 1.14s | 1.13s | **1.00s** |
+| Vector push (100K) | 0.16s | 0.15s | **0.14s** |
+| **Composite (all + fib(25))** | **33.67s** | **3.39s** | **3.05s** |
+
+**Total speedup: 11x** on the composite benchmark.
