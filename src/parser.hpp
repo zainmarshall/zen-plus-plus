@@ -6,10 +6,13 @@
 class Parser {
 public:
     Parser(const std::vector<Token>& toks);
-    ASTNode* parseExpression(); 
+    Parser(const std::vector<Token>& toks, ASTArena* arena);
+    ASTNode* parseExpression();
 private:
     std::vector<Token> tokens;
     size_t pos = 0;
+    ASTArena* arena = nullptr;
+    ASTArena ownedArena; // used when no external arena provided
 
     Token currentToken();
     Token peekToken(size_t offset = 1);

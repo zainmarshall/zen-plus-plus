@@ -21,9 +21,8 @@
 #include "parser.hpp"
 #include "ASTNode.hpp"
 
-// Flow control signals for break/continue in loops
-struct BreakSignal {};
-struct ContinueSignal {};
+// Flow control signal enum (values declared after Value type)
+enum class Signal { NONE, RETURN, BREAK, CONTINUE };
 
 struct HashKey {
     std::variant<std::int64_t, std::string> data;
@@ -260,10 +259,10 @@ struct StructDef {
 
 std::string executableDir;
 
-struct ReturnSignal {
-    Value value;
-};
+Signal currentSignal = Signal::NONE;
+Value signalValue; // holds return value when Signal::RETURN
 
+ASTArena globalArena; // arena for all AST nodes — lives for program duration
 std::vector<std::unordered_map<std::string, Value>> scopes(1);
 std::unordered_map<std::string, FunctionDef> functions;
 std::unordered_map<std::string, StructDef> structDefs;
@@ -333,6 +332,9 @@ void resetRuntime() {
     functionCallDepth = 0;
     importedModules.clear();
     clearInputBuffer();
+    currentSignal = Signal::NONE;
+    signalValue = Value();
+    globalArena.clear();
 }
 
 std::string loadStdlibSource();
@@ -796,6 +798,7 @@ Value evaluate(const ASTNode* node) {
             Value result = Value(static_cast<std::int64_t>(0));
             for (const auto* stmt : node->children) {
                 result = evaluate(stmt);
+                if (currentSignal != Signal::NONE) return result;
             }
             return result;
         }
@@ -824,10 +827,10 @@ Value evaluate(const ASTNode* node) {
             }
             Value result = Value(static_cast<std::int64_t>(0));
             while (evaluate(node->children[0]).truthy()) {
-                try {
-                    result = evaluate(node->children[1]);
-                } catch (BreakSignal&) { break; }
-                  catch (ContinueSignal&) { continue; }
+                result = evaluate(node->children[1]);
+                if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
+                if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
+                if (currentSignal == Signal::RETURN) return result;
             }
             return result;
         }
@@ -862,10 +865,10 @@ Value evaluate(const ASTNode* node) {
             bool skipVar = (varNode->name == "_");
             for (std::int64_t i = start; (step > 0) ? (i < end) : (i > end); i += step) {
                 if (!skipVar) setVariable(varNode->name, Value(i));
-                try {
-                    result = evaluate(body);
-                } catch (BreakSignal&) { break; }
-                  catch (ContinueSignal&) { continue; }
+                result = evaluate(body);
+                if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
+                if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
+                if (currentSignal == Signal::RETURN) return result;
             }
             return result;
         }
@@ -890,10 +893,10 @@ Value evaluate(const ASTNode* node) {
                     const auto& vec = collection.asVector("for-each");
                     for (size_t i = 0; i < vec.size(); ++i) {
                         if (!skipVar) setVariable(varNode->name, vec[i]);
-                        try {
-                            result = evaluate(body);
-                        } catch (BreakSignal&) { break; }
-                          catch (ContinueSignal&) { continue; }
+                        result = evaluate(body);
+                        if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
+                        if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
+                        if (currentSignal == Signal::RETURN) return result;
                     }
                 } else if (collection.isMap()) {
                     HashMapPtr hm = collection.asMap("for-each");
@@ -903,10 +906,10 @@ Value evaluate(const ASTNode* node) {
                         } else {
                             setVariable(varNode->name, Value(std::get<std::string>(key.data)));
                         }
-                        try {
-                            result = evaluate(body);
-                        } catch (BreakSignal&) { break; }
-                          catch (ContinueSignal&) { continue; }
+                        result = evaluate(body);
+                        if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
+                        if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
+                        if (currentSignal == Signal::RETURN) return result;
                     }
                 } else if (collection.isSet()) {
                     HashSetPtr hs = collection.asSet("for-each");
@@ -916,10 +919,10 @@ Value evaluate(const ASTNode* node) {
                         } else {
                             setVariable(varNode->name, Value(std::get<std::string>(key.data)));
                         }
-                        try {
-                            result = evaluate(body);
-                        } catch (BreakSignal&) { break; }
-                          catch (ContinueSignal&) { continue; }
+                        result = evaluate(body);
+                        if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
+                        if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
+                        if (currentSignal == Signal::RETURN) return result;
                     }
                 } else {
                     throw std::runtime_error("for-each requires a vector, map, or set");
@@ -941,10 +944,10 @@ Value evaluate(const ASTNode* node) {
                         } else {
                             throw std::runtime_error("Tuple unpacking requires vector elements");
                         }
-                        try {
-                            result = evaluate(body);
-                        } catch (BreakSignal&) { break; }
-                          catch (ContinueSignal&) { continue; }
+                        result = evaluate(body);
+                        if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
+                        if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
+                        if (currentSignal == Signal::RETURN) return result;
                     }
                 } else if (collection.isMap()) {
                     if (numVars != 2) {
@@ -960,10 +963,10 @@ Value evaluate(const ASTNode* node) {
                         }
                         if (node->children[0]->name != "_") setVariable(node->children[0]->name, keyVal);
                         if (node->children[1]->name != "_") setVariable(node->children[1]->name, val);
-                        try {
-                            result = evaluate(body);
-                        } catch (BreakSignal&) { break; }
-                          catch (ContinueSignal&) { continue; }
+                        result = evaluate(body);
+                        if (currentSignal == Signal::BREAK) { currentSignal = Signal::NONE; break; }
+                        if (currentSignal == Signal::CONTINUE) { currentSignal = Signal::NONE; continue; }
+                        if (currentSignal == Signal::RETURN) return result;
                     }
                 } else {
                     throw std::runtime_error("Tuple unpacking for-each requires vector or map");
@@ -972,10 +975,12 @@ Value evaluate(const ASTNode* node) {
             return result;
         }
         case NodeType::BREAK: {
-            throw BreakSignal{};
+            currentSignal = Signal::BREAK;
+            return Value(static_cast<std::int64_t>(0));
         }
         case NodeType::CONTINUE: {
-            throw ContinueSignal{};
+            currentSignal = Signal::CONTINUE;
+            return Value(static_cast<std::int64_t>(0));
         }
         case NodeType::TERNARY: {
             Value cond = evaluate(node->children[0]);
@@ -1202,20 +1207,14 @@ Value evaluate(const ASTNode* node) {
                 scopes.back()[fn.params[i]] = argValues[i];
             }
             functionCallDepth++;
-            try {
-                Value result = evaluate(fn.body);
-                functionCallDepth--;
-                scopes.pop_back();
-                return result;
-            } catch (const ReturnSignal& signal) {
-                functionCallDepth--;
-                scopes.pop_back();
-                return signal.value;
-            } catch (...) {
-                functionCallDepth--;
-                scopes.pop_back();
-                throw;
+            Value result = evaluate(fn.body);
+            functionCallDepth--;
+            scopes.pop_back();
+            if (currentSignal == Signal::RETURN) {
+                currentSignal = Signal::NONE;
+                return signalValue;
             }
+            return result;
         }
         case NodeType::LAMBDA: {
             // Register lambda as a function and return its name
@@ -1358,18 +1357,10 @@ Value evaluate(const ASTNode* node) {
                     scopes.push_back({});
                     scopes.back()["self"] = objVal;
                     functionCallDepth++;
-                    try {
-                        (void)evaluate(initFn.body);
-                        functionCallDepth--;
-                        scopes.pop_back();
-                    } catch (const ReturnSignal&) {
-                        functionCallDepth--;
-                        scopes.pop_back();
-                    } catch (...) {
-                        functionCallDepth--;
-                        scopes.pop_back();
-                        throw;
-                    }
+                    (void)evaluate(initFn.body);
+                    functionCallDepth--;
+                    scopes.pop_back();
+                    if (currentSignal == Signal::RETURN) currentSignal = Signal::NONE;
                 }
                 return objVal;
             }
@@ -1712,19 +1703,12 @@ Value evaluate(const ASTNode* node) {
                     scopes.back()[userCmp->params[0]] = a;
                     scopes.back()[userCmp->params[1]] = b;
                     functionCallDepth++;
-                    Value result;
-                    try {
-                        result = evaluate(userCmp->body);
-                        functionCallDepth--;
-                        scopes.pop_back();
-                    } catch (const ReturnSignal& signal) {
-                        functionCallDepth--;
-                        scopes.pop_back();
-                        result = signal.value;
-                    } catch (...) {
-                        functionCallDepth--;
-                        scopes.pop_back();
-                        throw;
+                    Value result = evaluate(userCmp->body);
+                    functionCallDepth--;
+                    scopes.pop_back();
+                    if (currentSignal == Signal::RETURN) {
+                        currentSignal = Signal::NONE;
+                        result = signalValue;
                     }
                     if (!result.isNumber()) {
                         throw std::runtime_error("Comparator must return a number");
@@ -2118,19 +2102,12 @@ Value evaluate(const ASTNode* node) {
                     scopes.push_back({});
                     scopes.back()[pred.params[0]] = elem;
                     functionCallDepth++;
-                    Value result;
-                    try {
-                        result = evaluate(pred.body);
-                        functionCallDepth--;
-                        scopes.pop_back();
-                    } catch (const ReturnSignal& signal) {
-                        functionCallDepth--;
-                        scopes.pop_back();
-                        result = signal.value;
-                    } catch (...) {
-                        functionCallDepth--;
-                        scopes.pop_back();
-                        throw;
+                    Value result = evaluate(pred.body);
+                    functionCallDepth--;
+                    scopes.pop_back();
+                    if (currentSignal == Signal::RETURN) {
+                        currentSignal = Signal::NONE;
+                        result = signalValue;
                     }
                     if (isAll && !result.truthy()) return Value(static_cast<std::int64_t>(0));
                     if (!isAll && result.truthy()) return Value(static_cast<std::int64_t>(1));
@@ -2283,26 +2260,22 @@ Value evaluate(const ASTNode* node) {
                 scopes.back()[fn.params[i]] = argValues[i];
             }
             functionCallDepth++;
-            try {
-                Value result = evaluate(fn.body);
-                functionCallDepth--;
-                scopes.pop_back();
-                return result;
-            } catch (const ReturnSignal& signal) {
-                functionCallDepth--;
-                scopes.pop_back();
-                return signal.value;
-            } catch (...) {
-                functionCallDepth--;
-                scopes.pop_back();
-                throw;
+            Value result = evaluate(fn.body);
+            functionCallDepth--;
+            scopes.pop_back();
+            if (currentSignal == Signal::RETURN) {
+                currentSignal = Signal::NONE;
+                return signalValue;
             }
+            return result;
         }
         case NodeType::RETURN: {
             if (functionCallDepth == 0) {
                 throw std::runtime_error("'return' used outside function");
             }
-            throw ReturnSignal{evaluate(node->left)};
+            signalValue = evaluate(node->left);
+            currentSignal = Signal::RETURN;
+            return signalValue;
         }
         case NodeType::IMPORT: {
             const std::string& name = node->name;
@@ -2347,7 +2320,7 @@ Value evaluate(const ASTNode* node) {
 Value runSource(const std::string& source, bool printResult) {
     Lexer lexer(source);
     auto tokens = lexer.tokenize();
-    Parser parser(tokens);
+    Parser parser(tokens, &globalArena);
     ASTNode* ast = parser.parseExpression();
     Value result = evaluate(ast);
     if (printResult) {

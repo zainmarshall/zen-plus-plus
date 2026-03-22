@@ -67,3 +67,46 @@ struct ASTNode {
     ASTNode(NodeType t, const std::string& n, const std::vector<ASTNode*>& nodes)
         : type(t), value(0), fvalue(0.0), name(n), children(nodes) {}
 };
+
+// Arena allocator — pools all ASTNode allocations into contiguous blocks.
+// Eliminates per-node malloc/free overhead and improves cache locality.
+class ASTArena {
+public:
+    ASTArena() { blocks.reserve(16); counts.reserve(16); newBlock(); }
+    ~ASTArena() { destroy(); }
+
+    // Variadic alloc — forwards args to ASTNode constructor
+    template<typename... Args>
+    ASTNode* alloc(Args&&... args) {
+        if (pos >= BLOCK_SIZE) newBlock();
+        ASTNode* node = new (&blocks.back()[pos]) ASTNode(std::forward<Args>(args)...);
+        pos++;
+        counts.back() = pos;
+        return node;
+    }
+
+    void clear() { destroy(); newBlock(); }
+
+private:
+    static constexpr size_t BLOCK_SIZE = 4096;
+    std::vector<ASTNode*> blocks;
+    std::vector<size_t> counts; // how many nodes were initialized in each block
+    size_t pos = 0;
+
+    void newBlock() {
+        blocks.push_back(static_cast<ASTNode*>(::operator new(BLOCK_SIZE * sizeof(ASTNode))));
+        counts.push_back(0);
+        pos = 0;
+    }
+
+    void destroy() {
+        for (size_t b = 0; b < blocks.size(); b++) {
+            size_t n = counts[b];
+            for (size_t i = 0; i < n; i++) blocks[b][i].~ASTNode();
+            ::operator delete(blocks[b]);
+        }
+        blocks.clear();
+        counts.clear();
+        pos = 0;
+    }
+};

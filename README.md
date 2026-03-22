@@ -210,3 +210,45 @@ emcc -std=c++17 -O2 \
   -s EXPORTED_RUNTIME_METHODS='["cwrap","UTF8ToString"]' \
   -o docs/zenpp.js
 ```
+
+## Optimization
+
+Zen++ uses several optimization techniques in its interpreter and delivery pipeline. Run `make bench` to reproduce benchmarks.
+
+### Flag-based control flow (replaced C++ exceptions)
+
+`return`, `break`, and `continue` originally used C++ `throw`/`catch` for control flow. C++ exceptions are designed for error handling, not regular control flow — they're 100-1000x slower than normal returns due to stack unwinding.
+
+Replaced with a global `Signal` enum. Return/break/continue set a flag; loops and function calls check it after each evaluation. All `try`/`catch` blocks removed from hot paths.
+
+**Result:** Function calls went from 7.05s → 0.41s (**17x faster**). Composite benchmark 32.5s → 3.4s (**9.7x faster**).
+
+### Arena allocator for AST nodes
+
+Every AST node was individually heap-allocated with `new`. For a program with thousands of nodes, this means thousands of `malloc`/`free` calls with poor cache locality — nodes scattered across the heap.
+
+Replaced with `ASTArena`, which allocates nodes from contiguous 4096-node blocks using placement `new`. Reduces allocation calls from ~N to ~N/4096. Nodes are physically adjacent in memory for better CPU cache performance.
+
+### Zero external dependencies
+
+The entire project — interpreter, web IDE, build system — has zero external dependencies. No npm packages, no pip packages, no third-party C++ libraries. The interpreter is pure C++17 stdlib. The web IDE is raw HTML/CSS/JS + WASM. This means:
+- No dependency vulnerabilities
+- No supply chain risk
+- Minimal bundle size (468 KB WASM + 110 KB JS/CSS)
+
+### Efficient data structures
+
+- `std::unordered_map` for O(1) variable and function lookup
+- `std::variant` for polymorphic `Value` type (no virtual dispatch overhead)
+- `std::shared_ptr` for reference-counted maps/sets/objects (no GC pauses)
+- Quicksort with median-of-three pivot selection (avoids O(n²) on sorted input)
+
+### Benchmarks
+
+| Benchmark | Iterations | Time |
+|---|---|---|
+| Simple loop (`x += 1`) | 1,000,000 | ~1.1s |
+| Function calls (`add(x, 1)`) | 100,000 | ~0.4s |
+| Variable read/write | 500,000 | ~1.1s |
+| Vector push | 100,000 | ~0.2s |
+| Composite (all above + fib(25)) | — | ~3.4s |

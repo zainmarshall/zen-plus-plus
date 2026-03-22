@@ -1,0 +1,4 @@
+fn add(a, b) { return a + b }
+x = 0
+for i 100000 { x = add(x, 1) }
+println(x)

@@ -454,4 +454,31 @@ More language features. Bitwise NOT, f-strings, chained comparisons, destructuri
 7. **Newline-aware postfix parsing**
    - Fixed a parser ambiguity where `[` on a new line was consumed as an index operator from the previous expression. Indexing with `[` now requires it to be on the same line as the expression.
 
+## Zen++ Devlog XV — Interpreter Optimization
+
+Two optimizations to the interpreter core. Combined result: **9.7x speedup** on the composite benchmark (32.5s → 3.4s). Function calls went from 7.05s → 0.41s (**17x faster**).
+
+### What Changed
+
+1. **Flag-based control flow (replaced C++ exceptions)**
+   - `return`, `break`, `continue` previously used `throw`/`catch` — C++ exceptions are 100-1000x slower than normal returns.
+   - Replaced with a global `Signal` enum (`NONE`, `RETURN`, `BREAK`, `CONTINUE`). Return sets the flag and stores the value. Loops check the flag after each iteration. Functions check after evaluating the body.
+   - Every loop body had a `try/catch` wrapping it — all removed. Every function call had a `try/catch` for `ReturnSignal` — all removed.
+   - This is what drove the 17x improvement on function calls.
+
+2. **Arena allocator for AST nodes**
+   - Every `new ASTNode(...)` was an individual heap allocation. For a program with thousands of nodes, that's thousands of malloc/free calls with poor cache locality.
+   - Replaced with `ASTArena` — allocates nodes from contiguous 4096-node blocks using placement new. Nodes are physically adjacent in memory → better cache performance.
+
+### Benchmark Results
+
+Run `make bench` to reproduce. Before → After:
+- **Simple loop (1M iters):** 1.02s → 1.07s (~1x, no change expected)
+- **Function calls (100K iters):** 7.05s → 0.41s (**17.2x faster**)
+- **Variable read/write (500K iters):** 1.12s → 1.14s (~1x)
+- **Vector push (100K iters):** 0.15s → 0.15s (~1x)
+- **Composite (all + fib(25)):** 32.53s → 3.35s (**9.7x faster**)
+
+The function call path was the bottleneck — exception overhead dominated. Loop and variable benchmarks are unchanged since those paths didn't use exceptions.
+
 

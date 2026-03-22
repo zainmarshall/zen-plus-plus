@@ -3,7 +3,8 @@
 #include <stdexcept>
 #include <cstdint>
 
-Parser::Parser(const std::vector<Token>& toks) : tokens(toks), pos(0) {}
+Parser::Parser(const std::vector<Token>& toks) : tokens(toks), pos(0), arena(&ownedArena) {}
+Parser::Parser(const std::vector<Token>& toks, ASTArena* a) : tokens(toks), pos(0), arena(a ? a : &ownedArena) {}
 
 Token Parser::currentToken() { return tokens[pos]; }
 Token Parser::peekToken(size_t offset) {
@@ -22,7 +23,7 @@ ASTNode* Parser::parseProgram() {
     while (currentToken().type != TokenType::END) {
         statements.push_back(parseStatment());
     }
-    return new ASTNode(NodeType::BLOCK, statements);
+    return arena->alloc(NodeType::BLOCK, statements);
 }
 
 //The order is: parseStatment -> parseExpr -> parseTerm -> parseFactor
@@ -51,26 +52,26 @@ ASTNode* Parser::parseStatment() {
     }
     if (tok.type == TokenType::BREAK) {
         advance();
-        return new ASTNode(NodeType::BREAK, nullptr, nullptr);
+        return arena->alloc(NodeType::BREAK, nullptr, nullptr);
     }
     if (tok.type == TokenType::CONTINUE) {
         advance();
-        return new ASTNode(NodeType::CONTINUE, nullptr, nullptr);
+        return arena->alloc(NodeType::CONTINUE, nullptr, nullptr);
     }
     if(tok.type == TokenType::IDENTIFIER) {
         if (tok.name == "map" && peekToken().type == TokenType::IDENTIFIER) {
             advance(); // consume 'map'
             std::string name = currentToken().name;
             advance();
-            return new ASTNode(NodeType::ASSIGN, new ASTNode(name),
-                new ASTNode(NodeType::FUNCTION_CALL, "map", std::vector<ASTNode*>{}));
+            return arena->alloc(NodeType::ASSIGN, arena->alloc(name),
+                arena->alloc(NodeType::FUNCTION_CALL, "map", std::vector<ASTNode*>{}));
         }
         if (tok.name == "set" && peekToken().type == TokenType::IDENTIFIER) {
             advance(); // consume 'set'
             std::string name = currentToken().name;
             advance();
-            return new ASTNode(NodeType::ASSIGN, new ASTNode(name),
-                new ASTNode(NodeType::FUNCTION_CALL, "set", std::vector<ASTNode*>{}));
+            return arena->alloc(NodeType::ASSIGN, arena->alloc(name),
+                arena->alloc(NodeType::FUNCTION_CALL, "set", std::vector<ASTNode*>{}));
         }
         // Multi-assignment: a, b = 1, 2
         if (peekToken().type == TokenType::COMMA) {
@@ -92,7 +93,7 @@ ASTNode* Parser::parseStatment() {
                 advance(); // consume =
                 std::vector<ASTNode*> children;
                 for (const auto& n : names) {
-                    children.push_back(new ASTNode(n));
+                    children.push_back(arena->alloc(n));
                 }
                 // parse comma-separated values
                 children.push_back(parseTernary());
@@ -101,7 +102,7 @@ ASTNode* Parser::parseStatment() {
                     children.push_back(parseTernary());
                 }
                 // Store name count in node's value field
-                ASTNode* result = new ASTNode(NodeType::MULTI_ASSIGN, children);
+                ASTNode* result = arena->alloc(NodeType::MULTI_ASSIGN, children);
                 result->value = static_cast<std::int64_t>(names.size());
                 return result;
             }
@@ -114,7 +115,7 @@ ASTNode* Parser::parseStatment() {
             (lhs->type == NodeType::IDENT || lhs->type == NodeType::INDEX || lhs->type == NodeType::MEMBER)) {
             advance();
             ASTNode* exprNode = parseTernary();
-            return new ASTNode(NodeType::ASSIGN, lhs, exprNode);
+            return arena->alloc(NodeType::ASSIGN, lhs, exprNode);
         }
         pos = startPos;
 
@@ -124,15 +125,15 @@ ASTNode* Parser::parseStatment() {
             advance();
             advance();
             ASTNode* exprNode = parseExpr();
-            return new ASTNode(NodeType::ASSIGN, new ASTNode(varName), exprNode);
+            return arena->alloc(NodeType::ASSIGN, arena->alloc(varName), exprNode);
         }
         if (next.type == TokenType::PLUS_PLUS || next.type == TokenType::MINUS_MINUS) {
             std::string varName = tok.name;
             advance();
             advance();
             NodeType opType = (next.type == TokenType::PLUS_PLUS) ? NodeType::ADD : NodeType::SUB;
-            ASTNode* rhs = new ASTNode(opType, new ASTNode(varName), new ASTNode(1));
-            return new ASTNode(NodeType::ASSIGN, new ASTNode(varName), rhs);
+            ASTNode* rhs = arena->alloc(opType, arena->alloc(varName), arena->alloc(1));
+            return arena->alloc(NodeType::ASSIGN, arena->alloc(varName), rhs);
         }
         NodeType opType;
         bool isCompound = true;
@@ -155,8 +156,8 @@ ASTNode* Parser::parseStatment() {
             advance();
             advance();
             ASTNode* exprNode = parseTernary();
-            ASTNode* rhs = new ASTNode(opType, new ASTNode(varName), exprNode);
-            return new ASTNode(NodeType::ASSIGN, new ASTNode(varName), rhs);
+            ASTNode* rhs = arena->alloc(opType, arena->alloc(varName), exprNode);
+            return arena->alloc(NodeType::ASSIGN, arena->alloc(varName), rhs);
         }
     }
     // Destructuring: [a, b, c] = expr
@@ -186,10 +187,10 @@ ASTNode* Parser::parseStatment() {
                 ASTNode* rhs = parseTernary();
                 std::vector<ASTNode*> children;
                 for (const auto& n : names) {
-                    children.push_back(new ASTNode(n));
+                    children.push_back(arena->alloc(n));
                 }
                 children.push_back(rhs);
-                ASTNode* result = new ASTNode(NodeType::DESTRUCT_ASSIGN, children);
+                ASTNode* result = arena->alloc(NodeType::DESTRUCT_ASSIGN, children);
                 result->value = static_cast<std::int64_t>(names.size());
                 return result;
             }
@@ -202,7 +203,7 @@ ASTNode* Parser::parseStatment() {
 ASTNode* Parser::parseReturnStatement() {
     advance(); // consume return
     ASTNode* value = parseTernary();
-    return new ASTNode(NodeType::RETURN, value, nullptr);
+    return arena->alloc(NodeType::RETURN, value, nullptr);
 }
 
 ASTNode* Parser::parseImportStatement() {
@@ -212,7 +213,7 @@ ASTNode* Parser::parseImportStatement() {
     }
     std::string name = currentToken().name;
     advance();
-    return new ASTNode(NodeType::IMPORT, name, std::vector<ASTNode*>{});
+    return arena->alloc(NodeType::IMPORT, name, std::vector<ASTNode*>{});
 }
 
 ASTNode* Parser::parseStructDefinition() {
@@ -241,13 +242,13 @@ ASTNode* Parser::parseStructDefinition() {
             }
             advance();
             ASTNode* defaultValue = parseTernary();
-            methods.push_back(new ASTNode(NodeType::ASSIGN, new ASTNode(fieldName), defaultValue));
+            methods.push_back(arena->alloc(NodeType::ASSIGN, arena->alloc(fieldName), defaultValue));
         } else {
             throw std::runtime_error("Struct body must contain field or function definitions");
         }
     }
     advance(); // consume }
-    return new ASTNode(NodeType::STRUCT_DEF, name, methods);
+    return arena->alloc(NodeType::STRUCT_DEF, name, methods);
 }
 
 ASTNode* Parser::parseFunctionDefinition() {
@@ -274,9 +275,9 @@ ASTNode* Parser::parseFunctionDefinition() {
             if (currentToken().type == TokenType::ASSIGN) {
                 advance(); // consume =
                 ASTNode* defaultVal = parseTernary();
-                children.push_back(new ASTNode(NodeType::ASSIGN, new ASTNode(paramName), defaultVal));
+                children.push_back(arena->alloc(NodeType::ASSIGN, arena->alloc(paramName), defaultVal));
             } else {
-                children.push_back(new ASTNode(paramName));
+                children.push_back(arena->alloc(paramName));
             }
 
             if (currentToken().type == TokenType::COMMA) {
@@ -294,7 +295,7 @@ ASTNode* Parser::parseFunctionDefinition() {
 
     ASTNode* body = parseBlock();
     children.push_back(body);
-    return new ASTNode(NodeType::FUNCTION_DEF, functionName, children);
+    return arena->alloc(NodeType::FUNCTION_DEF, functionName, children);
 }
 
 ASTNode* Parser::parseIfStatement() {
@@ -321,7 +322,7 @@ ASTNode* Parser::parseIfStatement() {
         }
     }
 
-    return new ASTNode(NodeType::IF, children);
+    return arena->alloc(NodeType::IF, children);
 }
 
 ASTNode* Parser::parseWhileStatement() {
@@ -331,7 +332,7 @@ ASTNode* Parser::parseWhileStatement() {
     std::vector<ASTNode*> children;
     children.push_back(condition);
     children.push_back(body);
-    return new ASTNode(NodeType::WHILE, children);
+    return arena->alloc(NodeType::WHILE, children);
 }
 
 ASTNode* Parser::parseForStatement() {
@@ -369,11 +370,11 @@ ASTNode* Parser::parseForStatement() {
         ASTNode* body = parseBlock();
         std::vector<ASTNode*> children;
         for (const auto& n : varNames) {
-            children.push_back(new ASTNode(n));
+            children.push_back(arena->alloc(n));
         }
         children.push_back(collection);
         children.push_back(body);
-        ASTNode* result = new ASTNode(NodeType::FOR_EACH, children);
+        ASTNode* result = arena->alloc(NodeType::FOR_EACH, children);
         result->value = static_cast<std::int64_t>(varNames.size());
         return result;
     }
@@ -398,7 +399,7 @@ ASTNode* Parser::parseForStatement() {
     ASTNode* stepExpr = nullptr;
 
     if (parts.size() == 1) {
-        startExpr = new ASTNode(0);
+        startExpr = arena->alloc(0);
         endExpr = parts[0];
     } else if (parts.size() == 2) {
         startExpr = parts[0];
@@ -411,14 +412,14 @@ ASTNode* Parser::parseForStatement() {
 
     ASTNode* body = parseBlock();
     std::vector<ASTNode*> children;
-    children.push_back(new ASTNode(varName));
+    children.push_back(arena->alloc(varName));
     children.push_back(startExpr);
     children.push_back(endExpr);
     if (stepExpr != nullptr) {
         children.push_back(stepExpr);
     }
     children.push_back(body);
-    return new ASTNode(NodeType::FOR, children);
+    return arena->alloc(NodeType::FOR, children);
 }
 
 ASTNode* Parser::parseBlock() {
@@ -434,7 +435,7 @@ ASTNode* Parser::parseBlock() {
         statements.push_back(parseStatment());
     }
     advance(); // consume }
-    return new ASTNode(NodeType::BLOCK, statements);
+    return arena->alloc(NodeType::BLOCK, statements);
 }
 
 ASTNode* Parser::parseShift() {
@@ -442,7 +443,7 @@ ASTNode* Parser::parseShift() {
     while (currentToken().type == TokenType::SHIFT_LEFT || currentToken().type == TokenType::SHIFT_RIGHT) {
         NodeType nt = (currentToken().type == TokenType::SHIFT_LEFT) ? NodeType::BIT_SHIFT_LEFT : NodeType::BIT_SHIFT_RIGHT;
         advance();
-        node = new ASTNode(nt, node, parseExpr());
+        node = arena->alloc(nt, node, parseExpr());
     }
     return node;
 }
@@ -471,9 +472,9 @@ ASTNode* Parser::parseComparison() {
             case TokenType::GREATER_EQUAL: nodeType = NodeType::GREATER_EQUAL; break;
             default: throw std::runtime_error("Invalid comparison operator");
         }
-        ASTNode* cmp = new ASTNode(nodeType, left, right);
+        ASTNode* cmp = arena->alloc(nodeType, left, right);
         if (result == nullptr) { result = cmp; }
-        else { result = new ASTNode(NodeType::AND, result, cmp); }
+        else { result = arena->alloc(NodeType::AND, result, cmp); }
         left = right;
     }
     return result;
@@ -483,7 +484,7 @@ ASTNode* Parser::parseLogicalAnd() {
     ASTNode* node = parseBitwiseOr();
     while (currentToken().type == TokenType::AND) {
         advance();
-        node = new ASTNode(NodeType::AND, node, parseBitwiseOr());
+        node = arena->alloc(NodeType::AND, node, parseBitwiseOr());
     }
     return node;
 }
@@ -492,7 +493,7 @@ ASTNode* Parser::parseLogicalOr() {
     ASTNode* node = parseLogicalAnd();
     while (currentToken().type == TokenType::OR) {
         advance();
-        node = new ASTNode(NodeType::OR, node, parseLogicalAnd());
+        node = arena->alloc(NodeType::OR, node, parseLogicalAnd());
     }
     return node;
 }
@@ -508,7 +509,7 @@ ASTNode* Parser::parseTernary() {
         advance(); // consume :
         ASTNode* elseExpr = parseTernary();
         std::vector<ASTNode*> children = {cond, thenExpr, elseExpr};
-        return new ASTNode(NodeType::TERNARY, children);
+        return arena->alloc(NodeType::TERNARY, children);
     }
     return cond;
 }
@@ -517,7 +518,7 @@ ASTNode* Parser::parseBitwiseOr() {
     ASTNode* node = parseBitwiseXor();
     while (currentToken().type == TokenType::BIT_OR) {
         advance();
-        node = new ASTNode(NodeType::BIT_OR, node, parseBitwiseXor());
+        node = arena->alloc(NodeType::BIT_OR, node, parseBitwiseXor());
     }
     return node;
 }
@@ -526,7 +527,7 @@ ASTNode* Parser::parseBitwiseXor() {
     ASTNode* node = parseBitwiseAnd();
     while (currentToken().type == TokenType::BIT_XOR) {
         advance();
-        node = new ASTNode(NodeType::BIT_XOR, node, parseBitwiseAnd());
+        node = arena->alloc(NodeType::BIT_XOR, node, parseBitwiseAnd());
     }
     return node;
 }
@@ -535,7 +536,7 @@ ASTNode* Parser::parseBitwiseAnd() {
     ASTNode* node = parseComparison();
     while (currentToken().type == TokenType::BIT_AND) {
         advance();
-        node = new ASTNode(NodeType::BIT_AND, node, parseComparison());
+        node = arena->alloc(NodeType::BIT_AND, node, parseComparison());
     }
     return node;
 }
@@ -546,11 +547,11 @@ ASTNode* Parser::parseExpr() {
         Token tok = currentToken();
         if (tok.type == TokenType::PLUS) {
              advance();
-             node = new ASTNode(NodeType::ADD, node, parseTerm());
+             node = arena->alloc(NodeType::ADD, node, parseTerm());
             }
         else if (tok.type == TokenType::MINUS) {
             advance();
-            node = new ASTNode(NodeType::SUB, node, parseTerm());
+            node = arena->alloc(NodeType::SUB, node, parseTerm());
         }
         else break;
     }
@@ -561,7 +562,7 @@ ASTNode* Parser::parseExp() {
     ASTNode* node = parsePostfix();
     if (currentToken().type == TokenType::EXP) {
         advance();
-        node = new ASTNode(NodeType::EXP, node, parseExp()); // right-associative
+        node = arena->alloc(NodeType::EXP, node, parseExp()); // right-associative
     }
     return node;
 }
@@ -570,9 +571,9 @@ ASTNode* Parser::parseTerm() {
     ASTNode* node = parseExp();
     while (true) {
         Token tok = currentToken();
-        if (tok.type == TokenType::STAR) { advance(); node = new ASTNode(NodeType::MUL, node, parseExp()); }
-        else if (tok.type == TokenType::SLASH) { advance(); node = new ASTNode(NodeType::DIV, node, parseExp()); }
-        else if (tok.type == TokenType::MOD) { advance(); node = new ASTNode(NodeType::MOD, node, parseExp()); }
+        if (tok.type == TokenType::STAR) { advance(); node = arena->alloc(NodeType::MUL, node, parseExp()); }
+        else if (tok.type == TokenType::SLASH) { advance(); node = arena->alloc(NodeType::DIV, node, parseExp()); }
+        else if (tok.type == TokenType::MOD) { advance(); node = arena->alloc(NodeType::MOD, node, parseExp()); }
         else break;
     }
     return node;
@@ -606,7 +607,7 @@ ASTNode* Parser::parsePostfix() {
                     throw std::runtime_error("Expected ']' after slice");
                 }
                 advance();
-                ASTNode* sliceNode = new ASTNode(NodeType::SLICE, node, nullptr);
+                ASTNode* sliceNode = arena->alloc(NodeType::SLICE, node, nullptr);
                 sliceNode->children = {startExpr, endExpr, stepExpr};
                 node = sliceNode;
             } else {
@@ -615,7 +616,7 @@ ASTNode* Parser::parsePostfix() {
                     throw std::runtime_error("Expected ']' after index expression");
                 }
                 advance();
-                node = new ASTNode(NodeType::INDEX, node, startExpr);
+                node = arena->alloc(NodeType::INDEX, node, startExpr);
             }
             continue;
         }
@@ -643,9 +644,9 @@ ASTNode* Parser::parsePostfix() {
                     throw std::runtime_error("Expected ')' after method arguments");
                 }
                 advance();
-                node = new ASTNode(NodeType::METHOD_CALL, node, memberName, args);
+                node = arena->alloc(NodeType::METHOD_CALL, node, memberName, args);
             } else {
-                node = new ASTNode(NodeType::MEMBER, node, memberName);
+                node = arena->alloc(NodeType::MEMBER, node, memberName);
             }
             continue;
         }
@@ -660,12 +661,12 @@ ASTNode* Parser::parseFactor() {
     if (tok.type == TokenType::NOT) {
         advance();
         ASTNode* rhs = parseFactor();
-        return new ASTNode(NodeType::NOT, rhs, nullptr);
+        return arena->alloc(NodeType::NOT, rhs, nullptr);
     }
     if (tok.type == TokenType::TILDE) {
         advance();
         ASTNode* rhs = parseFactor();
-        return new ASTNode(NodeType::BIT_NOT, rhs, nullptr);
+        return arena->alloc(NodeType::BIT_NOT, rhs, nullptr);
     }
     if (tok.type == TokenType::PLUS_PLUS || tok.type == TokenType::MINUS_MINUS) {
         bool isInc = (tok.type == TokenType::PLUS_PLUS);
@@ -676,21 +677,21 @@ ASTNode* Parser::parseFactor() {
         std::string varName = currentToken().name;
         advance();
         NodeType opType = isInc ? NodeType::ADD : NodeType::SUB;
-        ASTNode* rhs = new ASTNode(opType, new ASTNode(varName), new ASTNode(1));
-        return new ASTNode(NodeType::ASSIGN, new ASTNode(varName), rhs);
+        ASTNode* rhs = arena->alloc(opType, arena->alloc(varName), arena->alloc(1));
+        return arena->alloc(NodeType::ASSIGN, arena->alloc(varName), rhs);
     }
     if (tok.type == TokenType::MINUS) {
         advance();
         ASTNode* rhs = parseFactor();
-        return new ASTNode(NodeType::NEG, rhs, nullptr);
+        return arena->alloc(NodeType::NEG, rhs, nullptr);
     }
     if (tok.type == TokenType::PLUS) {
         advance();
         return parseFactor();
     }
-    if (tok.type == TokenType::INT) { advance(); node = new ASTNode(tok.value); }
-    else if (tok.type == TokenType::FLOAT) { advance(); node = new ASTNode(NodeType::FLOAT, tok.fvalue); }
-    else if (tok.type == TokenType::STRING) { advance(); node = new ASTNode(NodeType::STRING, tok.name); }
+    if (tok.type == TokenType::INT) { advance(); node = arena->alloc(tok.value); }
+    else if (tok.type == TokenType::FLOAT) { advance(); node = arena->alloc(NodeType::FLOAT, tok.fvalue); }
+    else if (tok.type == TokenType::STRING) { advance(); node = arena->alloc(NodeType::STRING, tok.name); }
     else if (tok.type == TokenType::FSTRING) {
         advance();
         const std::string& content = tok.name;
@@ -708,27 +709,27 @@ ASTNode* Parser::parseFactor() {
                 std::string exprStr = content.substr(i + 1, j - i - 2);
                 Lexer exprLexer(exprStr);
                 auto exprTokens = exprLexer.tokenize();
-                Parser exprParser(exprTokens);
+                Parser exprParser(exprTokens, arena);
                 ASTNode* exprAst = exprParser.parseExpression();
-                ASTNode* strNode = new ASTNode(NodeType::FUNCTION_CALL, "str", std::vector<ASTNode*>{exprAst});
+                ASTNode* strNode = arena->alloc(NodeType::FUNCTION_CALL, "str", std::vector<ASTNode*>{exprAst});
                 if (result == nullptr) { result = strNode; }
-                else { result = new ASTNode(NodeType::ADD, result, strNode); }
+                else { result = arena->alloc(NodeType::ADD, result, strNode); }
                 i = j;
             } else {
                 size_t j = i;
                 while (j < content.size() && content[j] != '{') j++;
                 std::string literal = content.substr(i, j - i);
-                ASTNode* litNode = new ASTNode(NodeType::STRING, literal);
+                ASTNode* litNode = arena->alloc(NodeType::STRING, literal);
                 if (result == nullptr) { result = litNode; }
-                else { result = new ASTNode(NodeType::ADD, result, litNode); }
+                else { result = arena->alloc(NodeType::ADD, result, litNode); }
                 i = j;
             }
         }
-        if (result == nullptr) { result = new ASTNode(NodeType::STRING, std::string("")); }
+        if (result == nullptr) { result = arena->alloc(NodeType::STRING, std::string("")); }
         node = result;
     }
-    else if (tok.type == TokenType::TRUE) { advance(); node = new ASTNode(NodeType::BOOL, static_cast<std::int64_t>(1)); }
-    else if (tok.type == TokenType::FALSE) { advance(); node = new ASTNode(NodeType::BOOL, static_cast<std::int64_t>(0)); }
+    else if (tok.type == TokenType::TRUE) { advance(); node = arena->alloc(NodeType::BOOL, static_cast<std::int64_t>(1)); }
+    else if (tok.type == TokenType::FALSE) { advance(); node = arena->alloc(NodeType::BOOL, static_cast<std::int64_t>(0)); }
     else if (tok.type == TokenType::LBRACKET) {
         advance();
         std::vector<ASTNode*> elements;
@@ -746,7 +747,7 @@ ASTNode* Parser::parseFactor() {
             throw std::runtime_error("Expected ']' after vector literal");
         }
         advance();
-        node = new ASTNode(NodeType::VECTOR, elements);
+        node = arena->alloc(NodeType::VECTOR, elements);
     }
     else if (tok.type == TokenType::IDENTIFIER) {
         advance();
@@ -767,15 +768,15 @@ ASTNode* Parser::parseFactor() {
                 throw std::runtime_error("Expected ')' after function arguments");
             }
             advance(); // consume )
-            node = new ASTNode(NodeType::FUNCTION_CALL, tok.name, args);
+            node = arena->alloc(NodeType::FUNCTION_CALL, tok.name, args);
         } else if (currentToken().type == TokenType::PLUS_PLUS) {
             advance();
-            node = new ASTNode(NodeType::POST_INCREMENT, new ASTNode(tok.name), nullptr);
+            node = arena->alloc(NodeType::POST_INCREMENT, arena->alloc(tok.name), nullptr);
         } else if (currentToken().type == TokenType::MINUS_MINUS) {
             advance();
-            node = new ASTNode(NodeType::POST_DECREMENT, new ASTNode(tok.name), nullptr);
+            node = arena->alloc(NodeType::POST_DECREMENT, arena->alloc(tok.name), nullptr);
         } else {
-            node = new ASTNode(tok.name);
+            node = arena->alloc(tok.name);
         }
     }
     else if (tok.type == TokenType::FN) {
@@ -796,9 +797,9 @@ ASTNode* Parser::parseFactor() {
                 if (currentToken().type == TokenType::ASSIGN) {
                     advance();
                     ASTNode* defaultVal = parseTernary();
-                    children.push_back(new ASTNode(NodeType::ASSIGN, new ASTNode(paramName), defaultVal));
+                    children.push_back(arena->alloc(NodeType::ASSIGN, arena->alloc(paramName), defaultVal));
                 } else {
-                    children.push_back(new ASTNode(paramName));
+                    children.push_back(arena->alloc(paramName));
                 }
                 if (currentToken().type == TokenType::COMMA) {
                     advance();
@@ -815,7 +816,7 @@ ASTNode* Parser::parseFactor() {
         children.push_back(body);
         static int lambdaCounter = 0;
         std::string lname = "__lambda_" + std::to_string(lambdaCounter++);
-        node = new ASTNode(NodeType::LAMBDA, lname, children);
+        node = arena->alloc(NodeType::LAMBDA, lname, children);
     }
     else if (tok.type == TokenType::LPAREN) {
         advance();
@@ -829,7 +830,7 @@ ASTNode* Parser::parseFactor() {
     // Unary Operators
     while (currentToken().type == TokenType::NOT || currentToken().type == TokenType::FACTORIAL) {
         advance();
-        node = new ASTNode(NodeType::FACTORIAL, node, nullptr);
+        node = arena->alloc(NodeType::FACTORIAL, node, nullptr);
     }
     return node;
 }

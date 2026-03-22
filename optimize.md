@@ -150,15 +150,22 @@ Currently the WASM module loads on page open. Move it to load on first "Run" cli
 
 ## Implementation Priority
 
-| # | Optimization | Impact | Effort |
-|---|---|---|---|
-| 1 | Exception → flag control flow | Highest | Medium |
-| 2 | Pre-allocate scope frames | High | Medium |
-| 3 | Constant folding | Medium | Easy |
-| 4 | Arena allocator | Medium | Easy |
-| 5 | WASM size (`-Oz` + compress) | Medium | Easy |
-| 6 | Lazy WASM loading | Low-Medium | Easy |
-| 7 | Avoid Value copies | Medium | Hard |
-| 8 | Index-based variables | High | Hard |
+| # | Optimization | Impact | Effort | Status |
+|---|---|---|---|---|
+| 1 | Exception → flag control flow | Highest | Medium | **Done** — 17x faster function calls |
+| 2 | Pre-allocate scope frames | High | Medium | |
+| 3 | Constant folding | Medium | Easy | |
+| 4 | Arena allocator | Medium | Easy | **Done** — 4096-node block allocator |
+| 5 | WASM size (`-Oz` + compress) | Medium | Easy | |
+| 6 | Lazy WASM loading | Low-Medium | Easy | |
+| 7 | Avoid Value copies | Medium | Hard | |
+| 8 | Index-based variables | High | Hard | |
 
-Target: implement 1-6 for the sidequest. Measure before/after for each.
+## Results So Far
+
+Composite benchmark (1M loop + 100K fn calls + 500K var ops + fib(25)):
+- **Before:** 32.53s
+- **After:** 3.35s
+- **Speedup: 9.7x**
+
+Run `make bench` to reproduce.
