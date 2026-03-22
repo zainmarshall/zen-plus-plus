@@ -518,3 +518,5 @@ Four optimizations to the interpreter. Combined: **11x speedup** on composite be
    - Modernized all 8 Codeforces solutions with new syntax (`read(n)`, slicing, `for c in s`, `any()`).
    - Website samples synced 1:1 with file samples (22 total across 5 categories).
 
+8. **Auto-loaded stdlib** - the standard library is now loaded automatically on startup. No more `import std` boilerplate - all math functions, data structures, and algorithms are available immediately.
+

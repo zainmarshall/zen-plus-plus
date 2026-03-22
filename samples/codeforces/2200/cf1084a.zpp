@@ -1,6 +1,5 @@
 // Codeforces 2200A - Eating Game
 // Simulate circular eating for each starting player, count distinct winners
-import std
 
 fn solve() {
     n = read()

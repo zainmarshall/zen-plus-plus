@@ -1,5 +1,4 @@
 // Prefix sum — answer range sum queries in O(1)
-import std
 
 n = read()
 q = read()

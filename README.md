@@ -7,6 +7,16 @@ Zen++ features C-style syntax with curly braces, no semicolons, automatic type i
 
 **[Try it in your browser](https://zainmarshall.github.io/zen-plus-plus/)**
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Language Overview](#language-overview)
+- [Standard Library](#standard-library)
+- [Built-in Functions](#built-in-functions)
+- [Documentation](#documentation)
+- [Build & Run](#build--run)
+- [Optimization](#optimization)
+
 ## Installation
 
 ### Interpreter
@@ -21,7 +31,7 @@ This builds the interpreter and installs it to `/usr/local/bin`. Requires `make`
 
 ### VS Code Extension
 
-Install **[Zen++ Language Support](https://marketplace.visualstudio.com/items?itemName=ZainMarshall.zenpp)** from the VS Code Marketplace for syntax highlighting.
+Install **[Zen++ Language Support](https://marketplace.visualstudio.com/items?itemName=ZainMarshall.zenpp)** from the VS Code Marketplace for syntax highlighting, f-string support, and a run button (Cmd+Enter).
 
 Or search "Zen++" in the VS Code extensions panel.
 
@@ -66,7 +76,7 @@ while n > 0 {
     n--
 }
 
-// for loop — three forms
+// for loop - three forms
 for i 5 { }              // i = 0, 1, 2, 3, 4
 for i 2 5 { }            // i = 2, 3, 4
 for i 10 0 -1 { }        // i = 10, 9, 8, ..., 1
@@ -145,9 +155,7 @@ println(p.dist())   // 25
 
 ### Standard Library
 
-```zenpp
-import std
-```
+The standard library is loaded automatically - no import needed.
 
 **Math:** `min` `max` `abs` `gcd` `lcm` `modpow` `prefix` `sum`
 
@@ -180,22 +188,11 @@ import std
 
 ## Documentation
 
-See the full [Language Reference](docs/language-reference.md) for complete documentation with examples.
+- [Language Reference](docs/language-reference.md) - full docs with examples
+- [Samples](samples/README.md) - 22 example programs including [Codeforces Round 2200](https://codeforces.com/contest/2200) solutions
+- [Devlogs](docs/devlogs.md) - development history from day 1
 
-## Samples & Docs
-
-- Samples index: [`samples/README.md`](samples/README.md)
-- Codeforces Round 2200: https://codeforces.com/contest/2200
-
-## Examples
-
-See the [`samples/`](samples/) directory for example programs.
-
-## License
-
-MIT
-
-### Build & Run
+## Build & Run
 
 ```bash
 # build
@@ -206,19 +203,14 @@ make
 
 # run with stdin from file
 ./zenpp program.zpp < input.txt
+
+# build WebAssembly (requires emscripten)
+make build-web
 ```
 
-### WebAssembly
+## License
 
-```bash
-# requires emscripten
-emcc -std=c++17 -O2 \
-  src/main.cpp src/lexer.cpp src/parser.cpp \
-  -s MODULARIZE=1 -s EXPORT_NAME=Zenpp \
-  -s EXPORTED_FUNCTIONS='["_zenpp_eval","_free"]' \
-  -s EXPORTED_RUNTIME_METHODS='["cwrap","UTF8ToString"]' \
-  -o docs/zenpp.js
-```
+MIT
 
 ## Optimization
 
@@ -226,7 +218,7 @@ Zen++ uses several optimization techniques in its interpreter and delivery pipel
 
 ### Flag-based control flow
 
-Replaced C++ `throw`/`catch` for `return`/`break`/`continue` with a `Signal` enum. Exceptions are 100-1000x slower than normal returns — this drove a 17x speedup on function calls.
+Replaced C++ `throw`/`catch` for `return`/`break`/`continue` with a `Signal` enum. Exceptions are 100-1000x slower than normal returns - this drove a 17x speedup on function calls.
 
 ### Arena allocator for AST nodes
 
@@ -242,7 +234,7 @@ Constant integer arithmetic (`1 + 2 + 3`) is evaluated at parse time and replace
 
 ### Zero external dependencies
 
-The entire project — interpreter, web IDE, build system — has zero external dependencies. No npm packages, no pip packages, no third-party C++ libraries. The interpreter is pure C++17 stdlib. The web IDE is raw HTML/CSS/JS + WASM.
+The entire project - interpreter, web IDE, build system - has zero external dependencies. No npm packages, no pip packages, no third-party C++ libraries. The interpreter is pure C++17 stdlib. The web IDE is raw HTML/CSS/JS + WASM.
 
 ### Efficient data structures
 

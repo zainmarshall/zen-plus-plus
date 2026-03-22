@@ -677,13 +677,9 @@ Define an `init()` method for initialization. Call it after creating the instanc
 
 ## Imports & Standard Library
 
-### Importing the Standard Library
+### Standard Library
 
-```zenpp
-import std
-```
-
-This loads all modules listed in `stdlib/manifest.txt`.
+The standard library is loaded automatically - all math functions, data structures, and algorithms are available without any import statement.
 
 ### Importing Files
 
@@ -694,7 +690,6 @@ import "mylib"       // loads mylib.zpp
 ### Standard Library: Math
 
 ```zenpp
-import std
 
 println(min(3, 7))       // 3
 println(max(3, 7))       // 7
@@ -709,7 +704,6 @@ println(ckmax(2, 8))     // 8
 #### Prefix Sums
 
 ```zenpp
-import std
 
 a = [1, 2, 3, 4, 5]
 p = prefix(a)            // [0, 1, 3, 6, 10, 15]
@@ -720,14 +714,12 @@ println(p[4] - p[1])     // 9
 #### Sum
 
 ```zenpp
-import std
 println(sum([1, 2, 3, 4, 5]))   // 15
 ```
 
 #### Binary Search
 
 ```zenpp
-import std
 
 arr = [2, 5, 8, 12, 16, 23, 38]
 println(binarySearch(arr, 23))   // 5
@@ -737,7 +729,6 @@ println(binarySearch(arr, 10))   // -1
 #### Lower Bound / Upper Bound
 
 ```zenpp
-import std
 
 v = [1, 3, 3, 3, 5, 7]
 println(lowerBound(v, 3))   // 1 (first index >= 3)
@@ -747,14 +738,12 @@ println(upperBound(v, 3))   // 4 (first index > 3)
 #### Modular Exponentiation
 
 ```zenpp
-import std
 println(modpow(2, 10, 1000000007))   // 1024
 ```
 
 #### Dijkstra (Shortest Paths)
 
 ```zenpp
-import std
 
 // wgraph reads weighted edges from stdin
 n, m = read(), read()
@@ -766,7 +755,6 @@ println(dist)
 #### BFS (Unweighted Shortest Paths)
 
 ```zenpp
-import std
 
 // graph reads unweighted edges from stdin
 n, m = read(), read()
@@ -780,7 +768,6 @@ println(dist)
 #### Stack (LIFO)
 
 ```zenpp
-import std
 s = Stack()
 s.init()
 s.push(10)
@@ -793,7 +780,6 @@ println(s.size())      // 1
 #### Queue (FIFO)
 
 ```zenpp
-import std
 q = Queue()
 q.init()
 q.push(10)
@@ -805,7 +791,6 @@ println(q.size())      // 1
 #### DSU (Disjoint Set Union / Union-Find)
 
 ```zenpp
-import std
 d = DSU()
 d.init(5)            // 5 elements: 0..4
 d.unite(1, 2)
@@ -819,7 +804,6 @@ println(d.same(1, 4))  // 1
 #### PriorityQueue (Max-Heap)
 
 ```zenpp
-import std
 pq = PriorityQueue()
 pq.init()
 pq.push(3)
@@ -833,7 +817,6 @@ println(pq.top())      // 3
 #### MinPriorityQueue (Min-Heap)
 
 ```zenpp
-import std
 pq = MinPriorityQueue()
 pq.init()
 pq.push(3)
@@ -847,7 +830,6 @@ println(pq.top())      // 3
 #### FenwickTree (Binary Indexed Tree)
 
 ```zenpp
-import std
 ft = FenwickTree()
 ft.init(10)              // 10 elements, zero-indexed
 ft.update(3, 5)          // add 5 to index 3
@@ -859,7 +841,6 @@ println(ft.rangeQuery(3, 7))  // sum [3..7]
 #### SegTree (Segment Tree)
 
 ```zenpp
-import std
 arr = [1, 3, 5, 7, 9, 11]
 st = SegTree()
 st.build(arr)
@@ -871,7 +852,6 @@ println(st.query(1, 3))    // sum of arr[1..3] = 20
 #### Pair and Tuple
 
 ```zenpp
-import std
 
 p = Pair()
 p.init(10, 20)
@@ -1056,7 +1036,6 @@ println(best)
 ### Graph BFS with Queue
 
 ```zenpp
-import std
 
 // read adjacency list
 n = read()

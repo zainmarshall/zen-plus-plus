@@ -917,7 +917,6 @@ println(float(10) + 0.5)`,
   {
     name: "DSU (Union-Find)",
     code: `// Disjoint Set Union demo
-import std
 
 d = DSU()
 d.init(6)
@@ -937,7 +936,6 @@ println(d.same(0, 4))   // 0`,
   {
     name: "Fenwick Tree",
     code: `// Fenwick Tree — point update + range sum queries in O(log n)
-import std
 
 ft = FenwickTree()
 ft.init(8)
@@ -957,7 +955,6 @@ println(ft.rangeQuery(2, 5))  // now 20`,
   {
     name: "Segment Tree",
     code: `// Segment Tree — range sum queries + point updates in O(log n)
-import std
 
 arr = [1, 3, 5, 7, 9, 11]
 st = SegTree()
@@ -973,7 +970,6 @@ println(st.query(1, 3))   // 3+10+7 = 20`,
   {
     name: "Prefix Sums",
     code: `// Prefix sum — answer range sum queries in O(1)
-import std
 
 n = read()
 q = read()
@@ -992,7 +988,6 @@ for i q {
   {
     name: "BFS",
     code: `// BFS traversal of an undirected graph
-import std
 
 n, m = read(), read()
 adj = graph(n, m)
@@ -1019,7 +1014,6 @@ while q.size() > 0 {
   {
     name: "Dijkstra",
     code: `// Dijkstra's shortest path demo
-import std
 
 n, m = read(), read()
 adj = wgraph(n, m)
@@ -1031,7 +1025,6 @@ println(dist)`,
     name: "CF 2200A — Eating Game",
     code: `// Codeforces 2200A - Eating Game
 // Simulate circular eating for each starting player, count distinct winners
-import std
 
 fn solve() {
     n = read()
@@ -1090,7 +1083,6 @@ while t-- { solve() }`,
     name: "CF 2200C — Specialty String",
     code: `// Codeforces 1084C - Specialty String
 // Stack-based: cancel adjacent equal chars, check if empty
-import std
 
 fn solve() {
     n = read()

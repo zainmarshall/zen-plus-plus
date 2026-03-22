@@ -1,5 +1,4 @@
 // Disjoint Set Union demo
-import std
 
 d = DSU()
 d.init(6)

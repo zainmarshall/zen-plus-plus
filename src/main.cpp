@@ -351,6 +351,9 @@ void setVariable(const std::string& name, const Value& value) {
     scopes[scopeDepth][name] = value;
 }
 
+std::string loadStdlibSource();
+Value runSource(const std::string& source, bool printResult);
+
 void resetRuntime() {
     scopes.clear();
     scopes.emplace_back();
@@ -365,8 +368,13 @@ void resetRuntime() {
     globalArena.clear();
 }
 
-std::string loadStdlibSource();
-Value runSource(const std::string& source, bool printResult);
+void loadStdlib() {
+    std::string stdlib = loadStdlibSource();
+    if (!stdlib.empty()) {
+        importedModules.insert("std");
+        runSource(stdlib, false);
+    }
+}
 
 std::int64_t readInt() {
     if (!inputBuffer.enabled) {
@@ -2591,6 +2599,7 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE
 char* zenpp_eval(const char* source, const char* input) {
     resetRuntime();
+    loadStdlib();
     std::string src = source ? source : "";
     std::string in = input ? input : "";
     std::string output = runSourceCaptured(src, in);
@@ -2667,6 +2676,8 @@ int main(int argc, char* argv[]){
     std::string argv0 = argv[0];
     size_t lastSlash = argv0.find_last_of("/\\");
     executableDir = (lastSlash != std::string::npos) ? argv0.substr(0, lastSlash) : ".";
+
+    loadStdlib();
 
     if (argc == 1) {
         return runRepl();

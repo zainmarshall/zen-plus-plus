@@ -1,7 +1,6 @@
 // Codeforces 2200H - Six Seven
 // Recursive mod-42 grouping
 // Uses global save_stack to work around Zen++ having no function-local scope
-import std
 
 INF = 4000000000000000000
 save_stack = []

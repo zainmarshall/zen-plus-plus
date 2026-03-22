@@ -1,6 +1,5 @@
 // Codeforces 1084F - Mooclear Reactor 2
 // Greedy with MinPriorityQueue
-import std
 
 fn solve() {
     n = read()

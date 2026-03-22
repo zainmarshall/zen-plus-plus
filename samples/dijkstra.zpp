@@ -1,5 +1,4 @@
 // Dijkstra's shortest path demo
-import std
 
 n, m = read(), read()
 adj = wgraph(n, m)

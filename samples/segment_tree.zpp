@@ -1,5 +1,4 @@
 // Segment Tree — range sum queries + point updates in O(log n)
-import std
 
 arr = [1, 3, 5, 7, 9, 11]
 st = SegTree()

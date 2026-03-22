@@ -1,6 +1,5 @@
 // Codeforces 1084C - Specialty String
 // Stack-based: cancel adjacent equal chars, check if empty
-import std
 
 fn solve() {
     n = read()

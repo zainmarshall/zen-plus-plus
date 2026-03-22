@@ -1,5 +1,4 @@
 // Fenwick Tree — point update + range sum queries in O(log n)
-import std
 
 ft = FenwickTree()
 ft.init(8)
